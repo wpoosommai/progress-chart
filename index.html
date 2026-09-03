@@ -178,7 +178,8 @@
   .signs .sig .role{display:block;text-align:center;line-height:1.2;}
   .signs .sig .fld:focus{background:#eef4ff;}
 
-  .note{font-size:13px;line-height:1.6;margin-top:12px;}
+  .note{font-size:13px;line-height:1.6;margin-top:12px;display:flex;gap:.35em;align-items:flex-start;}
+  .note .note-body{display:flex;flex-direction:column;}
   .note b{margin-right:6px;}
 
   .rowtools{display:flex;gap:6px;margin:8px 0;}
@@ -444,8 +445,11 @@
   </div>
 
   <div class="note">
-    <div><b>หมายเหตุ</b> 1. สำเนาส่งฝ่ายวิชาการ สัปดาห์ที่ 4, 8, 12, 16</div>
-    <div style="margin-left:52px;">2. แบบบันทึกความก้าวหน้าทางการเรียน ใช้รายวิชาทฤษฎีและรายวิชาทฤษฎี/ปฏิบัติ</div>
+    <b class="note-h">หมายเหตุ</b>
+    <div class="note-body">
+      <div>1. สำเนาส่งฝ่ายวิชาการ สัปดาห์ที่ 4, 8, 12, 16</div>
+      <div>2. แบบบันทึกความก้าวหน้าทางการเรียน ใช้รายวิชาทฤษฎีและรายวิชาทฤษฎี/ปฏิบัติ</div>
+    </div>
   </div>
 
 </div>
