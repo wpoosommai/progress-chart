@@ -805,6 +805,12 @@
     if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน'); return; }
     var h=state.head||{};
     var grp=(h.level||'')+((h.group!=null && h.group!=='')? (' กลุ่ม '+h.group):'');
+    // สัปดาห์ที่เป็น "สอบปลายภาค" (ดูจากชื่องานในรายการมอบหมายงาน) -> แยกไปคอลัมน์ปลายภาค
+    var finalWk=-1, BARE_FINAL=bareThai('ปลายภาค');
+    for(var w=0;w<WEEKS;w++){
+      var t=(state.assignments[w]&&state.assignments[w].text)||'';
+      if(t.indexOf('ปลายภาค')>=0 || bareThai(t).indexOf(BARE_FINAL)>=0){ finalWk=w; break; }
+    }
     var aoa=[
       ['ภาคเรียนที่ '+(h.term||'')+'  ปีการศึกษา '+(h.year||'')],
       ['รหัสวิชา : '+(h.code||'')+' : '+(h.subject||'')],
@@ -812,8 +818,13 @@
       ['ลำดับ','รหัสนักเรียนนักศึกษา','ชื่อ-สกุล','กลุ่มเรียน','ภาระงาน / คะแนนเก็บ(50)','จิตพิสัย(20)','ปลายภาค(30)','(0)','(0)']
     ];
     state.students.forEach(function(st,i){
-      var wsum=0, has=false;
-      for(var w=0;w<WEEKS;w++){ var v=parseFloat(st.scores[w]); if(!isNaN(v)){ wsum+=v; has=true; } }
+      var wsum=0, has=false, fin='';
+      for(var w=0;w<WEEKS;w++){
+        var v=parseFloat(st.scores[w]);
+        if(isNaN(v)) continue;
+        if(w===finalWk){ fin=Math.round(v*100)/100; }
+        else { wsum+=v; has=true; }
+      }
       var beh=parseFloat(st.behavior);
       aoa.push([
         i+1,
@@ -822,7 +833,8 @@
         grp,
         has? Math.round(wsum*100)/100 : '',
         isNaN(beh)? '' : beh,
-        '', '', ''
+        fin,
+        '', ''
       ]);
     });
     var wb=XLSX.utils.book_new();
