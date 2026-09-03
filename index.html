@@ -58,6 +58,8 @@
   .meta .fld.wide{min-width:170px;}
   .meta .fld.mid{min-width:96px;}
   .meta .fld.sm{min-width:28px;}
+  .meta .fld:empty::before, .signs .fld:empty::before{content:"\00a0";}
+  @media screen{ .meta .fld:empty, .signs .fld:empty{background:#fffbe6;} }
 
   table.chart{border-collapse:collapse; width:100%; min-width:900px; table-layout:fixed;}
   table.chart th, table.chart td{border:1px solid var(--line); text-align:center;
@@ -277,14 +279,14 @@
   </div>
 
   <div class="meta">
-    <div class="metarow">รายวิชา <span class="fld wide" contenteditable="true" data-k="subject">การเขียนโปรแกรมคอมพิวเตอร์</span>
-    รหัสวิชา <span class="fld mid" contenteditable="true" data-k="code">30105-2006</span>
-    ระดับชั้น <span class="fld" contenteditable="true" data-k="level">ปวส.1</span>
-    กลุ่ม <span class="fld sm" contenteditable="true" data-k="group">1</span>
-    แผนกวิชา <span class="fld mid" contenteditable="true" data-k="dept">ช่างอิเล็กทรอนิกส์</span></div>
-    <div class="metarow">ครูผู้สอน <span class="fld wide" contenteditable="true" data-k="teacher">นายไพรวัลย์ นพตะนา</span>
-    ประจำภาคเรียนที่ <span class="fld sm" contenteditable="true" data-k="term">2</span>
-    ปีการศึกษาที่ <span class="fld" contenteditable="true" data-k="year">2567</span></div>
+    <div class="metarow">รายวิชา <span class="fld wide" contenteditable="true" data-k="subject"></span>
+    รหัสวิชา <span class="fld mid" contenteditable="true" data-k="code"></span>
+    ระดับชั้น <span class="fld" contenteditable="true" data-k="level"></span>
+    กลุ่ม <span class="fld sm" contenteditable="true" data-k="group"></span>
+    แผนกวิชา <span class="fld mid" contenteditable="true" data-k="dept"></span></div>
+    <div class="metarow">ครูผู้สอน <span class="fld wide" contenteditable="true" data-k="teacher"></span>
+    ประจำภาคเรียนที่ <span class="fld sm" contenteditable="true" data-k="term"></span>
+    ปีการศึกษาที่ <span class="fld" contenteditable="true" data-k="year"></span></div>
   </div>
 
   <table class="chart">
@@ -337,12 +339,12 @@
   <div class="signs">
     <div class="sig">
       ลงชื่อ <span class="fld" contenteditable="true" data-k="sign1"></span><br>
-      ( <span class="fld" contenteditable="true" data-k="name1">นายไพรวัลย์ นพตะนา</span> )<br>
+      ( <span class="fld" contenteditable="true" data-k="name1"></span> )<br>
       ครูประจำวิชา
     </div>
     <div class="sig">
       ลงชื่อ <span class="fld" contenteditable="true" data-k="sign2"></span><br>
-      ( <span class="fld" contenteditable="true" data-k="name2">นายอรุณ ทองกลม</span> )<br>
+      ( <span class="fld" contenteditable="true" data-k="name2"></span> )<br>
       หัวหน้าแผนกวิชา
     </div>
   </div>
@@ -371,26 +373,7 @@
     for(var i=0;i<WEEKS;i++){
       s.assignments.push({label:"สป."+(i+1), text:"", score:""});
     }
-    // ตัวอย่างเริ่มต้น 14 คน
-    var sample = [
-      ["67301050001","นางสาวจันทร์จิรา พิลาดี"],
-      ["67301050002","นายชนิสร อนันทสุข"],
-      ["67301050003","นางสาวญาณภัทร เสาจันทร์"],
-      ["67301050004","นางสาวญาณภา เสาจันทร์"],
-      ["67301050005","นายณัฐกฤต ยงธนาสารสมบัติ"],
-      ["67301050006","นางสาวณิฌา พุทธรักษ์"],
-      ["67301050007","นายเทวินทร์ มั่นกัน"],
-      ["67301050008","นายธนกร ดวงสังข์"],
-      ["67301050009","นางสาวพิมพ์ชนก ศรีชัย"],
-      ["67301050010","นางสาวศิรินภา ลุกลาม"],
-      ["67301050011","นางสาวอัชชาวดี ขันทอง"],
-      ["67301050012","นายอานุภาพ สุจิตร"],
-      ["67301050054","นายบุรพล ทิพย์รักษา"],
-      ["67301050055","นายนนทพันธ์ ศรีกัลยา"]
-    ];
-    sample.forEach(function(r){
-      s.students.push({id:r[0], name:r[1], cells:new Array(WEEKS).fill(0), scores:new Array(WEEKS).fill("")});
-    });
+    // เริ่มต้นด้วยตารางว่าง — กรอกส่วนหัว แล้วนำเข้ารายชื่อ หรือกด "+ เพิ่มนักเรียน"
     return s;
   }
 
@@ -626,6 +609,14 @@
   function renderBody(){
     var tb=document.getElementById('tbody');
     tb.innerHTML='';
+    if(!state.students.length && !state.blanks){
+      var er=document.createElement('tr');
+      er.innerHTML='<td colspan="'+(WEEKS+5)+'" style="padding:22px;color:#888;font-size:14px;">'+
+        'ยังไม่มีรายชื่อนักเรียน — กด <b>“📋 นำเข้ารายชื่อ (ศธ.02 / PDF / Excel)”</b> หรือ <b>“+ เพิ่มนักเรียน”</b> ด้านบน</td>';
+      tb.appendChild(er);
+      document.getElementById('rowCount').textContent='0';
+      return;
+    }
     state.students.forEach(function(st,ri){
       var tr=document.createElement('tr');
       tr.innerHTML =
