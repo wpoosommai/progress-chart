@@ -319,7 +319,14 @@
     <h3>นำเข้าคะแนนจาก Excel</h3>
     <p class="sub" id="scoreInfo"></p>
     <textarea id="scoreText" spellcheck="false" placeholder="วางตารางจาก Excel ได้เลย (คัดลอกทั้งบล็อก)&#10;รหัสประจำตัว    ชื่อ-สกุล    1    2    3 ...&#10;67301050001    นางสาวจันทร์จิรา พิลาดี    10    8    9 ..."></textarea>
-    <div class="note-s">แถวแรก = หัวตาราง (เลข 1–18 หรือ สป.1–18) • ต้องมีคอลัมน์ <b>รหัสประจำตัว</b> หรือ <b>ชื่อ-สกุล</b> เพื่อจับคู่กับนักเรียนในตาราง • ช่องที่มีคะแนนจะถูกตั้งเป็น “ส่งงานแล้ว” ให้อัตโนมัติ</div>
+    <div class="note-s">
+      <b>รูปแบบไฟล์ Excel</b> (แผ่นงานแรก):<br>
+      • <b>แถวแรก = หัวตาราง</b> ต้องมีคอลัมน์ <b>รหัสประจำตัว</b> และ/หรือ <b>ชื่อ-สกุล</b> แล้วตามด้วยเลขสัปดาห์ <b>1, 2, 3 … 18</b> (หรือ สป.1–สป.18) และถ้ามี ให้ต่อท้ายด้วยคอลัมน์ <b>จิตพิสัย</b><br>
+      • <b>แถวถัดมา = นักเรียนคนละแถว</b> — ช่องสัปดาห์ใส่คะแนนที่ได้ (เว้นว่าง = ยังไม่ส่ง/ไม่แตะต้อง)<br>
+      • (ถ้าต้องการ) ใส่แถวชื่อ <b>คะแนนเต็ม</b> เพื่อกำหนดคะแนนเต็มรายสัปดาห์<br>
+      • จับคู่นักเรียนด้วย <b>รหัสประจำตัว</b> ก่อน ถ้าไม่มีจึงใช้ <b>ชื่อ-สกุล</b> • ช่องที่มีคะแนน &gt; 0 จะตั้งเป็น “ส่งงานแล้ว” ให้อัตโนมัติ • ตัวคั่นรองรับทั้ง Excel/CSV/วางจากคลิปบอร์ด
+      <div style="margin-top:6px;"><button type="button" id="scoreSample">⬇ ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)</button></div>
+    </div>
     <div class="opts">
       <label><input type="checkbox" id="scoreOverwrite" checked> เขียนทับคะแนนเดิม</label>
       <label><input type="checkbox" id="scoreMark" checked> ช่องที่มีคะแนน = ส่งงานแล้ว</label>
@@ -1824,6 +1831,49 @@
   document.getElementById('btnPasteScore').addEventListener('click',function(){
     if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน'); return; }
     openScore('', 'วางตารางคะแนนจาก Excel (รวมแถวหัวตาราง 1–18) แล้วกดยืนยัน — ระบบจับคู่นักเรียนด้วยรหัสประจำตัว/ชื่อ');
+  });
+
+  // ---- ดาวน์โหลดไฟล์ตัวอย่างสำหรับนำเข้าคะแนน ----
+  document.getElementById('scoreSample').addEventListener('click',function(){
+    if(typeof XLSX==='undefined'){ alert('ยังโหลดตัวอ่าน Excel ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ตครั้งแรก)'); return; }
+    var head=['รหัสประจำตัว','ชื่อ-สกุล'];
+    for(var w=1;w<=WEEKS;w++) head.push(w);
+    head.push('จิตพิสัย');
+    var full=['','คะแนนเต็ม'];
+    for(var w2=1;w2<=WEEKS;w2++) full.push(10);
+    full.push(20);
+    var aoa=[head,full];
+    var demo=[
+      ['67301050001','นางสาวจันทร์จิรา พิลาดี'],
+      ['67301050002','นายเดชาวัต ทองมี'],
+      ['67301050003','นายธีรภัทร แก้วมณี']
+    ];
+    var rows = state.students.length
+      ? state.students.map(function(st){ return [st.id||'', st.name||'']; })
+      : demo;
+    rows.forEach(function(r,ri){
+      var row=r.slice();
+      for(var w3=1;w3<=WEEKS;w3++){
+        // ใส่ตัวอย่างคะแนนเฉพาะกรณีไม่มีรายชื่อจริง
+        row.push(state.students.length ? '' : (w3<=8 ? (8+((ri+w3)%3)) : ''));
+      }
+      row.push(state.students.length ? '' : 18+ri);
+      aoa.push(row);
+    });
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    var cols=[{wch:16},{wch:26}];
+    for(var c=0;c<WEEKS;c++) cols.push({wch:5});
+    cols.push({wch:9});
+    ws['!cols']=cols;
+    XLSX.utils.book_append_sheet(wb,ws,'คะแนน');
+    var out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([out],{type:'application/octet-stream'}));
+    a.download = state.students.length ? ('ตัวอย่างนำเข้าคะแนน_'+baseName()+'.xlsx') : 'ตัวอย่างนำเข้าคะแนน.xlsx';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    flash(state.students.length ? 'ดาวน์โหลดแม่แบบพร้อมรายชื่อนักเรียนแล้ว ✓' : 'ดาวน์โหลดไฟล์ตัวอย่างแล้ว ✓');
   });
   document.getElementById('scoreText').addEventListener('paste',function(){
     var ta=this;
