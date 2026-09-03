@@ -325,7 +325,7 @@
       • <b>แถวถัดมา = นักเรียนคนละแถว</b> — ช่องสัปดาห์ใส่คะแนนที่ได้ (เว้นว่าง = ยังไม่ส่ง/ไม่แตะต้อง)<br>
       • (ถ้าต้องการ) ใส่แถวชื่อ <b>คะแนนเต็ม</b> เพื่อกำหนดคะแนนเต็มรายสัปดาห์<br>
       • จับคู่นักเรียนด้วย <b>รหัสประจำตัว</b> ก่อน ถ้าไม่มีจึงใช้ <b>ชื่อ-สกุล</b> • ช่องที่มีคะแนน &gt; 0 จะตั้งเป็น “ส่งงานแล้ว” ให้อัตโนมัติ • ตัวคั่นรองรับทั้ง Excel/CSV/วางจากคลิปบอร์ด
-      <div style="margin-top:6px;"><button type="button" id="scoreSample">⬇ ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)</button></div>
+      <div style="margin-top:6px;"><button type="button" id="scoreSample">📥 ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)</button></div>
     </div>
     <div class="opts">
       <label><input type="checkbox" id="scoreOverwrite" checked> เขียนทับคะแนนเดิม</label>
@@ -333,6 +333,7 @@
     </div>
     <div class="act">
       <button id="scoreCancel">ยกเลิก</button>
+      <button type="button" id="scorePick">📊 เลือกไฟล์ Excel…</button>
       <button id="scoreConfirm" class="primary">ยืนยันนำเข้า</button>
     </div>
   </div>
@@ -655,8 +656,8 @@
       ],
       score:[
         {head:"คะแนนรายสัปดาห์"},
-        {label:"📊 นำเข้าจาก Excel…", fn:function(){ g("fileScore").click(); }},
-        {label:"⌨ วางคะแนน (จาก Excel)", fn:function(){ g("btnPasteScore").click(); }},
+        {label:"📊 นำเข้าจาก Excel…", fn:function(){ g("btnPasteScore").click(); }},
+        {label:"⌨ วางคะแนนจากคลิปบอร์ด", fn:function(){ g("btnPasteScore").click(); }},
         "-",
         {head:"จิตพิสัย"},
         {label:"🙂 นำเข้าจาก ศธ.02 / PDF / Excel…", fn:function(){ g("fileBeh").click(); }},
@@ -1830,7 +1831,10 @@
 
   document.getElementById('btnPasteScore').addEventListener('click',function(){
     if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน'); return; }
-    openScore('', 'วางตารางคะแนนจาก Excel (รวมแถวหัวตาราง 1–18) แล้วกดยืนยัน — ระบบจับคู่นักเรียนด้วยรหัสประจำตัว/ชื่อ');
+    openScore('', 'กด “เลือกไฟล์ Excel…” เพื่อเลือกไฟล์ หรือวางตารางคะแนนลงในกล่องด้านล่าง (ดูรูปแบบไฟล์และดาวน์โหลดไฟล์ตัวอย่างได้ด้านล่าง)');
+  });
+  document.getElementById('scorePick').addEventListener('click',function(){
+    document.getElementById('fileScore').click();
   });
 
   // ---- ดาวน์โหลดไฟล์ตัวอย่างสำหรับนำเข้าคะแนน ----
