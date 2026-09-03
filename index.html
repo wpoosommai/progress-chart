@@ -1035,7 +1035,7 @@
       for(var w=0;w<WEEKS;w++){
         var v=parseFloat(st.scores[w]);
         if(isNaN(v)) continue;
-        if(w===finalWk){ fin=Math.round(v*100)/100; }
+        if(w===finalWk){ fin=Math.round(v); }        // ส่งออกเป็นจำนวนเต็มเท่านั้น
         else { wsum+=v; has=true; }
       }
       var beh=parseFloat(st.behavior);
@@ -1044,8 +1044,8 @@
         st.id||'',
         st.name||'',
         grp,
-        has? Math.round(wsum*100)/100 : '',
-        isNaN(beh)? '' : beh,
+        has? Math.round(wsum) : '',
+        isNaN(beh)? '' : Math.round(beh),
         fin,
         '', ''
       ]);
