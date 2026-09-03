@@ -204,6 +204,7 @@
   <button id="btnPasteScore">⌨ วางคะแนน</button>
   <label class="filebtn">🙂 นำเข้าจิตพิสัย (PDF/Excel)<input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden></label>
   <button id="btnPasteBeh">⌨ วางจิตพิสัย</button>
+  <button id="btnExportScore">📤 ส่งออกคะแนน (Excel)</button>
   <button id="btnPrint">🖨 พิมพ์ / บันทึกเป็น PDF</button>
   <button id="btnExport">💾 บันทึกไฟล์ข้อมูล (.json)</button>
   <label class="filebtn">📂 เปิดไฟล์ข้อมูล<input id="fileImport" type="file" accept="application/json" hidden></label>
@@ -441,6 +442,7 @@
     document.querySelectorAll('[data-k]').forEach(function(el){
       var k=el.getAttribute('data-k');
       if(state.head[k]!=null && state.head[k]!=="") el.textContent=state.head[k];
+      else if(el.textContent.trim()!=="") state.head[k]=el.textContent.trim(); // เก็บค่าเริ่มต้นจากฟอร์ม
       el.addEventListener('input',function(){
         state.head[k]=el.textContent.trim();
         scheduleSave();
@@ -802,6 +804,45 @@
     a.download=baseName()+'.json';
     a.click();
     URL.revokeObjectURL(a.href);
+  });
+
+  // ส่งออกคะแนนเป็น Excel ตามแบบฟอร์มส่งงานวัดผล (Grade Form)
+  document.getElementById('btnExportScore').addEventListener('click',function(){
+    if(typeof XLSX==='undefined'){ alert('ยังโหลดตัวสร้าง Excel ไม่สำเร็จ (ต้องเชื่อมต่ออินเทอร์เน็ตอย่างน้อยครั้งแรก)'); return; }
+    if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน'); return; }
+    var h=state.head||{};
+    var grp=(h.level||'')+((h.group!=null && h.group!=='')? (' กลุ่ม '+h.group):'');
+    var aoa=[
+      ['ภาคเรียนที่ '+(h.term||'')+'  ปีการศึกษา '+(h.year||'')],
+      ['รหัสวิชา : '+(h.code||'')+' : '+(h.subject||'')],
+      [],
+      ['ลำดับ','รหัสนักเรียนนักศึกษา','ชื่อ-สกุล','กลุ่มเรียน','ภาระงาน / คะแนนเก็บ(50)','จิตพิสัย(20)','ปลายภาค(30)','(0)','(0)']
+    ];
+    state.students.forEach(function(st,i){
+      var wsum=0, has=false;
+      for(var w=0;w<WEEKS;w++){ var v=parseFloat(st.scores[w]); if(!isNaN(v)){ wsum+=v; has=true; } }
+      var beh=parseFloat(st.behavior);
+      aoa.push([
+        i+1,
+        st.id||'',
+        st.name||'',
+        grp,
+        has? Math.round(wsum*100)/100 : '',
+        isNaN(beh)? '' : beh,
+        '', '', ''
+      ]);
+    });
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=[{wch:6},{wch:16},{wch:28},{wch:22},{wch:22},{wch:12},{wch:12},{wch:5},{wch:5}];
+    XLSX.utils.book_append_sheet(wb,ws,'Grade Form');
+    var out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([out],{type:'application/octet-stream'}));
+    a.download='ส่งออกคะแนน_'+baseName()+'.xlsx';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    flash('ส่งออกคะแนนเป็น Excel แล้ว ✓ ('+state.students.length+' คน)');
   });
   document.getElementById('fileImport').addEventListener('change',function(e){
     var f=e.target.files[0]; if(!f) return;
