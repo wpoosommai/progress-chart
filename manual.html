@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>คู่มือ Progress Chart</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root{
+    --ground:#f7f3ec;
+    --surface:#fffdf8;
+    --surface-2:#f0e9db;
+    --ink:#2b2620;
+    --muted:#726757;
+    --line:#e2d9c8;
+    --line-strong:#c9bda4;
+    --accent:#7c1d2a;
+    --accent-ink:#7c1d2a;
+    --gold:#8a6410;
+    --ok:#3f6b3f;
+    --warn:#8a5717;
+    --shadow:0 1px 2px rgba(60,45,25,.06), 0 8px 24px -12px rgba(60,45,25,.14);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#1a1613;
+      --surface:#221d19;
+      --surface-2:#2c261f;
+      --ink:#ece3d4;
+      --muted:#a89c88;
+      --line:#39322a;
+      --line-strong:#4b4136;
+      --accent:#e2949c;
+      --accent-ink:#e9a9b0;
+      --gold:#d8b262;
+      --ok:#8fbf8f;
+      --warn:#d7a75c;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#1a1613;
+    --surface:#221d19;
+    --surface-2:#2c261f;
+    --ink:#ece3d4;
+    --muted:#a89c88;
+    --line:#39322a;
+    --line-strong:#4b4136;
+    --accent:#e2949c;
+    --accent-ink:#e9a9b0;
+    --gold:#d8b262;
+    --ok:#8fbf8f;
+    --warn:#d7a75c;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} *{animation-duration:.01ms!important;transition-duration:.01ms!important;} }
+
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Sarabun","IBM Plex Sans Thai",system-ui,sans-serif;
+    font-size:17px;
+    line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 24px 96px;
+    display:grid;
+    grid-template-columns:248px minmax(0,1fr);
+    gap:56px;
+    align-items:start;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    grid-column:1 / -1;
+    border-bottom:2px solid var(--accent);
+    padding:44px 0 22px;
+    margin-bottom:20px;
+  }
+  .crest{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    margin:0 0 10px;
+  }
+  .masthead h1{
+    font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;
+    font-weight:700;
+    font-size:clamp(30px,4.4vw,46px);
+    line-height:1.12;
+    letter-spacing:-.01em;
+    margin:0 0 12px;
+    text-wrap:balance;
+  }
+  .masthead p{
+    margin:0;
+    max-width:60ch;
+    color:var(--muted);
+    font-size:18px;
+  }
+  .masthead .lede-meta{
+    margin-top:18px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 10px;
+    font-size:13.5px;
+  }
+  .pill{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;
+    letter-spacing:.03em;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:3px 11px;
+    color:var(--muted);
+  }
+
+  /* ---------- toc ---------- */
+  nav.toc{
+    position:sticky;
+    top:20px;
+    font-size:14.5px;
+  }
+  nav.toc .toc-title{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+    padding-left:2px;
+  }
+  nav.toc ol{
+    list-style:none;
+    margin:0;
+    padding:0;
+    counter-reset:toc;
+    border-left:1px solid var(--line);
+  }
+  nav.toc li{counter-increment:toc;}
+  nav.toc a{
+    display:grid;
+    grid-template-columns:26px 1fr;
+    gap:6px;
+    padding:5px 8px 5px 14px;
+    margin-left:-1px;
+    border-left:2px solid transparent;
+    color:var(--muted);
+    text-decoration:none;
+    line-height:1.35;
+  }
+  nav.toc a::before{
+    content:counter(toc,decimal-leading-zero);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11.5px;
+    color:var(--accent-ink);
+    padding-top:2px;
+  }
+  nav.toc a:hover{color:var(--ink);border-left-color:var(--line-strong);}
+  nav.toc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+
+  .toc-mobile{display:none;}
+
+  /* ---------- article ---------- */
+  article{min-width:0;}
+  article > section{
+    padding-top:26px;
+    margin-top:34px;
+    border-top:1px solid var(--line);
+    scroll-margin-top:16px;
+  }
+  article > section:first-of-type{border-top:0;margin-top:0;padding-top:0;}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    color:var(--accent-ink);
+    display:block;
+    margin-bottom:6px;
+  }
+  h2{
+    font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;
+    font-weight:700;
+    font-size:26px;
+    line-height:1.22;
+    margin:0 0 14px;
+    text-wrap:balance;
+  }
+  h3{
+    font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;
+    font-weight:600;
+    font-size:19px;
+    margin:26px 0 8px;
+    color:var(--ink);
+  }
+  p{margin:0 0 14px;max-width:66ch;}
+  article ul,article ol.steps{max-width:66ch;padding-left:1.3em;margin:0 0 16px;}
+  article li{margin:5px 0;}
+  strong{font-weight:600;}
+  a.link{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;}
+
+  code,.k{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.86em;
+  }
+  code{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:1px 5px;
+    color:var(--ink);
+  }
+  .k{
+    display:inline-block;
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-bottom-width:2px;
+    border-radius:6px;
+    padding:1px 7px;
+    line-height:1.5;
+    white-space:nowrap;
+    color:var(--ink);
+  }
+
+  pre{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--line-strong);
+    border-radius:8px;
+    padding:14px 16px;
+    overflow-x:auto;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:13.5px;
+    line-height:1.65;
+    margin:0 0 16px;
+    color:var(--ink);
+  }
+
+  /* ---------- callouts ---------- */
+  .callout{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:12px;
+    padding:13px 16px;
+    border-radius:8px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    margin:0 0 16px;
+    font-size:15.5px;
+    max-width:66ch;
+  }
+  .callout p{margin:0;max-width:none;}
+  .callout p + p{margin-top:6px;}
+  .callout .ci{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    padding-top:3px;
+  }
+  .callout.tip{border-left-color:var(--ok);}
+  .callout.tip .ci{color:var(--ok);}
+  .callout.warn{border-left-color:var(--warn);}
+  .callout.warn .ci{color:var(--warn);}
+
+  /* ---------- tables ---------- */
+  .tbl-scroll{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:8px;}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;}
+  th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  thead th{
+    background:var(--surface-2);
+    font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:.02em;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  tbody tr:last-child td{border-bottom:0;}
+  td .k{margin:1px 0;}
+  td code{font-size:12.5px;}
+
+  /* ---------- state legend ---------- */
+  .states{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:14px;
+    margin:4px 0 18px;
+  }
+  .state{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:14px;
+    box-shadow:var(--shadow);
+  }
+  .swatch{
+    width:38px;height:38px;
+    border:1.5px solid var(--ink);
+    position:relative;
+    margin-bottom:9px;
+    background:var(--surface);
+  }
+  .swatch.s1{
+    background:
+      linear-gradient(to top left, transparent calc(50% - .9px), var(--ink) calc(50% - .9px), var(--ink) calc(50% + .9px), transparent calc(50% + .9px));
+  }
+  .swatch.s2{ background:linear-gradient(to top left, transparent 49.3%, var(--ink) 49.3%); }
+  .swatch.s2::after{
+    content:"8";
+    position:absolute;right:3px;bottom:0;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);
+  }
+  .state b{display:block;font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;font-weight:600;font-size:15px;}
+  .state span{font-size:13.5px;color:var(--muted);}
+
+  /* ---------- footer ---------- */
+  footer{
+    grid-column:1 / -1;
+    margin-top:56px;
+    padding-top:22px;
+    border-top:2px solid var(--accent);
+    font-size:14px;
+    color:var(--muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 22px;
+    align-items:baseline;
+  }
+  footer .sig{font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;font-weight:600;color:var(--ink);}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr;gap:0;}
+    nav.toc{display:none;}
+    .toc-mobile{
+      display:block;
+      grid-column:1 / -1;
+      margin-bottom:8px;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:9px;
+      padding:4px 4px;
+    }
+    .toc-mobile summary{
+      cursor:pointer;list-style:none;
+      font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--accent-ink);padding:10px 12px;
+    }
+    .toc-mobile summary::-webkit-details-marker{display:none;}
+    .toc-mobile ol{list-style:none;margin:0;padding:4px 6px 10px;counter-reset:tm;}
+    .toc-mobile li{counter-increment:tm;}
+    .toc-mobile a{display:block;padding:6px 12px;color:var(--muted);text-decoration:none;}
+    .toc-mobile a::before{content:counter(tm,decimal-leading-zero) "  ";font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent-ink);}
+  }
+  @media (max-width:560px){
+    body{font-size:16px;}
+    .wrap{padding:0 16px 72px;}
+    h2{font-size:22px;}
+  }
+  img{max-width:100%;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="crest">วิทยาลัยเทคนิคศรีสะเกษ · สำนักงานคณะกรรมการการอาชีวศึกษา</p>
+    <h1>คู่มือใช้งานโปรแกรม<br>แบบบันทึกความก้าวหน้าทางการเรียน (Progress Chart)</h1>
+    <p>โปรแกรมกรอกแบบบันทึกความก้าวหน้าทางการเรียนแบบไฟล์เดียว เปิดด้วยเบราว์เซอร์ ทำงานออฟไลน์ บันทึกอัตโนมัติ พร้อมนำเข้ารายชื่อและคะแนนจาก PDF/Excel และบันทึกเป็น PDF ได้ในคลิกเดียว</p>
+    <div class="lede-meta">
+      <span class="pill">ไฟล์เดียว · index.html</span>
+      <span class="pill">รองรับ Chrome / Edge</span>
+      <span class="pill">18 สัปดาห์ + จิตพิสัย</span>
+      <span class="pill">github.com/wpoosommai/progress-chart</span>
+    </div>
+  </header>
+
+  <details class="toc-mobile">
+    <summary>สารบัญ</summary>
+    <ol>
+      <li><a href="#s1">เริ่มต้นใช้งาน</a></li>
+      <li><a href="#s2">กรอกส่วนหัวเอกสาร</a></li>
+      <li><a href="#s3">ตารางความก้าวหน้า</a></li>
+      <li><a href="#s4">คอลัมน์จิตพิสัย และคะแนนรวม</a></li>
+      <li><a href="#s5">รายการมอบหมายงาน</a></li>
+      <li><a href="#s6">จัดการรายชื่อนักเรียน</a></li>
+      <li><a href="#s7">นำเข้ารายชื่อจาก PDF</a></li>
+      <li><a href="#s8">นำเข้าคะแนนจาก Excel</a></li>
+      <li><a href="#s9">นำเข้าคะแนนจิตพิสัยจาก PDF</a></li>
+      <li><a href="#s10">บันทึกและเปิดไฟล์ข้อมูล</a></li>
+      <li><a href="#s11">พิมพ์ / บันทึกเป็น PDF</a></li>
+      <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
+      <li><a href="#s13">อัปเดตโปรแกรมจาก GitHub</a></li>
+    </ol>
+  </details>
+
+  <nav class="toc" aria-label="สารบัญ">
+    <p class="toc-title">สารบัญ</p>
+    <ol>
+      <li><a href="#s1">เริ่มต้นใช้งาน</a></li>
+      <li><a href="#s2">กรอกส่วนหัวเอกสาร</a></li>
+      <li><a href="#s3">ตารางความก้าวหน้า</a></li>
+      <li><a href="#s4">จิตพิสัย และคะแนนรวม</a></li>
+      <li><a href="#s5">รายการมอบหมายงาน</a></li>
+      <li><a href="#s6">จัดการรายชื่อนักเรียน</a></li>
+      <li><a href="#s7">นำเข้ารายชื่อจาก PDF</a></li>
+      <li><a href="#s8">นำเข้าคะแนนจาก Excel</a></li>
+      <li><a href="#s9">นำเข้าจิตพิสัยจาก PDF</a></li>
+      <li><a href="#s10">บันทึกและเปิดไฟล์ข้อมูล</a></li>
+      <li><a href="#s11">พิมพ์ / บันทึกเป็น PDF</a></li>
+      <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
+      <li><a href="#s13">อัปเดตจาก GitHub</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="s1">
+      <span class="eyebrow">ขั้นที่ 01</span>
+      <h2>เริ่มต้นใช้งาน</h2>
+      <p>โปรแกรมทั้งหมดอยู่ในไฟล์เดียวชื่อ <code>index.html</code> เปิดใช้งานได้ 2 ทาง</p>
+      <ol class="steps">
+        <li><strong>เปิดไฟล์โดยตรง</strong> — ดับเบิลคลิก <code>index.html</code> หรือคลิกขวา → เปิดด้วย → Google Chrome / Microsoft Edge</li>
+        <li><strong>เปิดผ่านเว็บ</strong> — ที่ <a class="link" href="https://wpoosommai.github.io/progress-chart/">wpoosommai.github.io/progress-chart</a> (ต้องเปิด GitHub Pages ก่อน — ดูขั้นที่ 13)</li>
+      </ol>
+      <p>หน้าจอแบ่งเป็น 2 ส่วน — <strong>แถบเครื่องมือสีเข้มด้านบน</strong> (ปุ่มคำสั่งทั้งหมด) และ <strong>ฟอร์มสีขาว</strong> ด้านล่างที่จะพิมพ์ออกมาจริง ทุกอย่างในฟอร์มแก้ไขได้โดยคลิกที่ข้อความหรือช่องนั้น</p>
+
+      <h3>ปุ่มบนแถบเครื่องมือ</h3>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>ปุ่ม</th><th>หน้าที่</th></tr></thead>
+          <tbody>
+            <tr><td><span class="k">+ เพิ่มนักเรียน</span></td><td>เพิ่มแถวนักเรียน 1 แถวต่อท้าย</td></tr>
+            <tr><td><span class="k">+ แถวว่าง</span></td><td>เพิ่มแถวเปล่าสำหรับเขียนด้วยมือหลังพิมพ์</td></tr>
+            <tr><td><span class="k">📋 นำเข้ารายชื่อจาก PDF</span></td><td>ดึงรายชื่อนักเรียนจากไฟล์ PDF ใบรายชื่อ</td></tr>
+            <tr><td><span class="k">⌨ วาง/พิมพ์รายชื่อ</span></td><td>วางรายชื่อจาก Excel/Word หรือพิมพ์เอง</td></tr>
+            <tr><td><span class="k">📊 นำเข้าคะแนนจาก Excel</span></td><td>ดึงคะแนนรายสัปดาห์จากไฟล์ .xlsx / .csv</td></tr>
+            <tr><td><span class="k">⌨ วางคะแนน</span></td><td>วางตารางคะแนนจาก Excel โดยตรง</td></tr>
+            <tr><td><span class="k">🙂 นำเข้าจิตพิสัย (PDF/Excel)</span></td><td>ดึงคะแนนจิตพิสัยจากแบบสรุปผลการประเมิน</td></tr>
+            <tr><td><span class="k">⌨ วางจิตพิสัย</span></td><td>วางรายการคะแนนจิตพิสัยเอง</td></tr>
+            <tr><td><span class="k">🖨 พิมพ์ / บันทึกเป็น PDF</span></td><td>เปิดหน้าต่างพิมพ์ของเบราว์เซอร์</td></tr>
+            <tr><td><span class="k">💾 บันทึกไฟล์ข้อมูล (.json)</span></td><td>ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์สำรอง</td></tr>
+            <tr><td><span class="k">📂 เปิดไฟล์ข้อมูล</span></td><td>โหลดไฟล์ .json กลับเข้าโปรแกรม</td></tr>
+            <tr><td><span class="k">♻ เริ่มใหม่</span></td><td>ล้างข้อมูลกลับค่าเริ่มต้น (มีถามยืนยัน)</td></tr>
+            <tr><td><span class="k">− ลบแถวสุดท้าย</span></td><td>อยู่ใต้ตาราง — ลบแถวว่างหรือนักเรียนแถวล่างสุด</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout tip">
+        <span class="ci">แนะนำ</span>
+        <p>ลองกดปุ่มต่าง ๆ ได้เลย โปรแกรมมีรายชื่อตัวอย่าง 14 คนให้อยู่แล้ว และทุกการแก้ไขถูกบันทึกอัตโนมัติ ถ้าอยากล้างเริ่มใหม่กด <span class="k">♻ เริ่มใหม่</span></p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <span class="eyebrow">ขั้นที่ 02</span>
+      <h2>กรอกส่วนหัวเอกสาร</h2>
+      <p>คลิกที่ข้อความในส่วนหัวเพื่อพิมพ์แก้ไขได้ทันที ทุกช่องจำค่าไว้ให้อัตโนมัติ</p>
+      <ul>
+        <li><strong>โลโก้</strong> — คลิกที่วงกลมโลโก้เพื่อเปลี่ยนรูป (ค่าเริ่มต้นเป็นตราสำนักงานคณะกรรมการการอาชีวศึกษา) เวลาพิมพ์ โลโก้ถูกล็อกขนาดที่ 20 มม. ตามมาตรฐานเอกสารราชการ</li>
+        <li><strong>ชื่อวิทยาลัย</strong> — แก้ได้ (ค่าเริ่มต้น “วิทยาลัยเทคนิคศรีสะเกษ”)</li>
+        <li><strong>บรรทัดรายวิชา</strong> — รายวิชา · รหัสวิชา · ระดับชั้น · กลุ่ม · แผนกวิชา อยู่บรรทัดเดียวกันเสมอ</li>
+        <li><strong>บรรทัดครูผู้สอน</strong> — ครูผู้สอน · ประจำภาคเรียนที่ · ปีการศึกษาที่</li>
+        <li><strong>ช่องลงชื่อท้ายฟอร์ม</strong> — ชื่อครูประจำวิชา และหัวหน้าแผนกวิชา แก้ได้</li>
+      </ul>
+      <p>ชื่อไฟล์ตอนบันทึก PDF และไฟล์ข้อมูล จะตั้งจาก <strong>รายวิชา + ภาคเรียน + ปีการศึกษา</strong> ให้อัตโนมัติ</p>
+    </section>
+
+    <section id="s3">
+      <span class="eyebrow">ขั้นที่ 03 · หัวใจของโปรแกรม</span>
+      <h2>ตารางความก้าวหน้า</h2>
+      <p>แต่ละช่องในตารางแบ่งด้วยเส้นทแยงจากมุมล่างซ้ายไปมุมบนขวา มี 3 สถานะ วนเมื่อคลิก</p>
+
+      <div class="states">
+        <div class="state">
+          <div class="swatch s0"></div>
+          <b>ว่าง — ขาดเรียน</b>
+          <span>ยังไม่มีเครื่องหมาย</span>
+        </div>
+        <div class="state">
+          <div class="swatch s1"></div>
+          <b>เส้นทแยง — มอบหมายงานแล้ว</b>
+          <span>ครูสั่งงานในสัปดาห์นั้นแล้ว</span>
+        </div>
+        <div class="state">
+          <div class="swatch s2"></div>
+          <b>ระบายสามเหลี่ยมบน — ปฏิบัติงานแล้ว / ส่งงานแล้ว</b>
+          <span>ระบายสามเหลี่ยมด้านบนทึบ + เขียนคะแนนที่มุมล่างขวา</span>
+        </div>
+      </div>
+
+      <h3>การกรอกทีละช่อง</h3>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>ทำ</th><th>ผลลัพธ์</th></tr></thead>
+          <tbody>
+            <tr><td><span class="k">คลิกซ้าย</span> ที่ช่อง</td><td>วนสถานะ ว่าง → เส้นทแยง → ส่งงาน → ว่าง</td></tr>
+            <tr><td>พิมพ์ตัวเลขที่ <strong>มุมล่างขวา</strong> ของช่อง</td><td>ใส่คะแนนของช่องนั้น</td></tr>
+            <tr><td>คลิกช่องจนกลับเป็น <strong>ว่าง</strong></td><td>ลบคะแนนในช่องนั้นให้ด้วย</td></tr>
+            <tr><td>ตั้งช่องเป็น <strong>ส่งงานแล้ว</strong> ขณะที่ยังไม่มีคะแนน</td><td>เติมคะแนนเต็มของสัปดาห์นั้นให้อัตโนมัติ (ถ้าตั้ง “เต็ม” ไว้ — ดูขั้นที่ 5)</td></tr>
+            <tr><td><span class="k">คลิกขวา</span> ที่ช่อง</td><td>เปิดเมนูคำสั่ง (ตารางถัดไป)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>คลิกเลขหัวสัปดาห์ (1–18) — ตั้งทั้งคอลัมน์ให้ทุกคน</h3>
+      <p>คลิกที่ตัวเลขหัวสัปดาห์ เพื่อตั้งสถานะของนักเรียน <strong>ทุกคน</strong> ในสัปดาห์นั้นพร้อมกัน</p>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>คลิกครั้งที่</th><th>ผลกับทุกคนในคอลัมน์</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>มอบหมายงานแล้ว (เส้นทแยง)</td></tr>
+            <tr><td>2</td><td>ปฏิบัติงานแล้ว + <strong>ใส่คะแนนเต็มให้ทุกคน</strong> (ถ้ายังไม่ตั้ง จะถามครั้งเดียวแล้วจำไว้)</td></tr>
+            <tr><td>3</td><td>ล้างทั้งคอลัมน์กลับเป็นว่าง</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>เมนูคลิกขวา</h3>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>คลิกขวาที่</th><th>เมนู</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>ช่องในตาราง</td>
+              <td>
+                ล้างช่องนี้ (ขาดเรียน) · ช่องนี้ = ส่งงานแล้ว + คะแนนเต็ม · แก้คะแนนเต็มสัปดาห์ที่ N…<br>
+                ทั้งคอลัมน์ → มอบหมายงาน / ส่งงาน+คะแนน / ล้าง · ตั้ง/ยกเลิกวันหยุด<br>
+                เพิ่มแถวเหนือ-ใต้คนนี้ · ย้ายขึ้น-ลง · <strong>ลบนักเรียนคนนี้</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>ช่อง เลขที่ / รหัส / ชื่อ</td>
+              <td>เพิ่มแถวเหนือ-ใต้คนนี้ · ย้ายขึ้น-ลง · ลบนักเรียนคนนี้</td>
+            </tr>
+            <tr>
+              <td>เลขหัวสัปดาห์</td>
+              <td>แก้คะแนนเต็มสัปดาห์ที่ N… · ตั้งทั้งคอลัมน์ (3 แบบ) · ตั้ง/ยกเลิกวันหยุด</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>ปิดเมนูด้วยการกด <span class="k">Esc</span> หรือคลิกที่อื่น</p>
+
+      <h3>วันหยุด</h3>
+      <p>คลิกขวาที่เลขหัวสัปดาห์ → “ตั้งเป็นวันหยุด” จะแรเงาทั้งคอลัมน์เพื่อบอกว่าสัปดาห์นั้นเป็นวันหยุด (เช่น หยุดวันปิยมหาราช)</p>
+    </section>
+
+    <section id="s4">
+      <span class="eyebrow">ขั้นที่ 04</span>
+      <h2>คอลัมน์จิตพิสัย และคะแนนรวม</h2>
+      <p>คอลัมน์ <strong>จิตพิสัย</strong> อยู่ระหว่างสัปดาห์ที่ 18 กับคอลัมน์ “รวมคะแนน” พิมพ์ตัวเลขได้โดยตรง หรือนำเข้าจากไฟล์ (ขั้นที่ 9)</p>
+      <div class="callout">
+        <span class="ci">สูตร</span>
+        <p><strong>รวมคะแนน = ผลรวมคะแนนทุกช่องในแถว + จิตพิสัย</strong></p>
+        <p>อัปเดตทันทีทุกครั้งที่แก้ไขช่องใดช่องหนึ่ง</p>
+      </div>
+      <p>ตามแบบสรุปผลการประเมินจิตพิสัยของอาชีวศึกษา คะแนนจิตพิสัยคิดจาก <em>คะแนนที่ได้ × 20</em> (เต็ม 20)</p>
+    </section>
+
+    <section id="s5">
+      <span class="eyebrow">ขั้นที่ 05</span>
+      <h2>รายการมอบหมายงาน (สป.1–สป.18)</h2>
+      <p>กล่อง “รายการมอบหมายงาน” ใต้ตาราง มี 18 บรรทัด แต่ละบรรทัดมี</p>
+      <ul>
+        <li><strong>ช่องข้อความ</strong> — พิมพ์ชื่องานของสัปดาห์นั้น เช่น “แบบฝึกหัดหลังเรียน”, “สอบเก็บคะแนนกลางภาค”</li>
+        <li><strong>ช่อง “เต็ม”</strong> — คะแนนเต็มของสัปดาห์นั้น</li>
+      </ul>
+      <p>ช่อง “เต็ม” ทำงานร่วมกับตาราง — เมื่อกดช่องนักเรียนเป็น <strong>“ส่งงานแล้ว”</strong> โปรแกรมจะเติมคะแนนเต็มนี้ให้ที่มุมล่างขวาของช่องอัตโนมัติ แล้วครูแก้เป็นคะแนนจริงรายคนได้</p>
+      <div class="callout tip">
+        <span class="ci">เร็วขึ้น</span>
+        <p>ตั้งช่อง “เต็ม” ของทุกสัปดาห์ไว้ก่อน แล้วใช้ <strong>คลิกเลขหัวสัปดาห์ 2 ครั้ง</strong> เพื่อให้คะแนนเต็มกับนักเรียนทั้งห้องในคลิกเดียว จากนั้นแก้เฉพาะคนที่ได้ไม่เต็ม</p>
+      </div>
+    </section>
+
+    <section id="s6">
+      <span class="eyebrow">ขั้นที่ 06</span>
+      <h2>จัดการรายชื่อนักเรียน</h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>ต้องการ</th><th>วิธีทำ</th></tr></thead>
+          <tbody>
+            <tr><td>เพิ่มนักเรียนต่อท้าย</td><td>ปุ่ม <span class="k">+ เพิ่มนักเรียน</span></td></tr>
+            <tr><td>แทรกแถวระหว่างกลาง</td><td>คลิกขวาที่แถว → เพิ่มแถวเหนือ / ใต้คนนี้</td></tr>
+            <tr><td>ย้ายลำดับนักเรียน</td><td>คลิกขวาที่แถว → ย้ายขึ้น / ย้ายลง</td></tr>
+            <tr><td>ลบนักเรียน 1 คน</td><td>คลิกขวาที่แถว → ลบนักเรียนคนนี้ (ถามยืนยัน)</td></tr>
+            <tr><td>ลบแถวล่างสุด</td><td>ปุ่ม <span class="k">− ลบแถวสุดท้าย</span></td></tr>
+            <tr><td>แถวเปล่าสำหรับเขียนมือ</td><td>ปุ่ม <span class="k">+ แถวว่าง</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>เลขที่ในคอลัมน์แรกเรียงใหม่อัตโนมัติทุกครั้งที่เพิ่ม ลบ หรือย้าย</p>
+    </section>
+
+    <section id="s7">
+      <span class="eyebrow">ขั้นที่ 07</span>
+      <h2>นำเข้ารายชื่อจาก PDF</h2>
+      <p>กด <span class="k">📋 นำเข้ารายชื่อจาก PDF</span> แล้วเลือกไฟล์ใบรายชื่อ โปรแกรมจะดึงคู่ <strong>รหัสประจำตัว + ชื่อ-สกุล</strong> ออกมา แล้วเปิดหน้าต่างให้ตรวจก่อนยืนยัน</p>
+
+      <h3>สิ่งที่โปรแกรมจัดการให้</h3>
+      <ul>
+        <li><strong>ตัดบรรทัดที่ไม่ใช่รายชื่อ</strong> — หัวตาราง (เลขที่ / รหัสประจำตัว / ชื่อ-สกุล), ครูผู้สอน, กลุ่มเรียน, รหัสวิชา, ระดับชั้น, จำนวนนักเรียน ฯลฯ ออกอัตโนมัติ</li>
+        <li><strong>แก้ภาษาไทยที่เพี้ยนจากการดึงข้อความ</strong> — การันต์ (<code>์</code>) ที่กลายเป็นสี่เหลี่ยม □ จะถูกแปลงกลับ และ “ํา” รวมกลับเป็น “ำ”</li>
+        <li><strong>ตัดรหัสครู</strong> — ถ้ามีแถวที่รหัสยาวไม่เท่ากับนักเรียนส่วนใหญ่ (เช่น เลขบัตรประชาชนครู 13 หลัก) จะถูกตัดออก</li>
+      </ul>
+
+      <h3>ในหน้าต่างตัวอย่าง</h3>
+      <ul>
+        <li>ตรวจ/แก้ไขรายชื่อได้ (1 คนต่อบรรทัด รูปแบบ <code>รหัส เว้นวรรค ชื่อ-สกุล</code>)</li>
+        <li>เลือก <strong>แทนที่รายชื่อเดิมทั้งหมด</strong> หรือ <strong>เพิ่มต่อท้าย</strong></li>
+        <li>ระบบแจ้งจำนวนที่จับคู่ได้ และรายการที่จับคู่ไม่ได้</li>
+      </ul>
+
+      <div class="callout warn">
+        <span class="ci">ข้อจำกัด</span>
+        <p>ต้องเชื่อมต่ออินเทอร์เน็ต<strong>อย่างน้อยครั้งแรก</strong> (โหลดตัวอ่าน PDF)</p>
+        <p>ถ้า PDF เป็น <strong>ไฟล์สแกน/รูปภาพ</strong> (ไม่มีชั้นข้อความ) จะดึงอัตโนมัติไม่ได้ — ใช้ <span class="k">⌨ วาง/พิมพ์รายชื่อ</span> คัดลอกจากไฟล์ต้นฉบับ Excel/Word แทน (ไม่เพี้ยนแน่นอน)</p>
+      </div>
+    </section>
+
+    <section id="s8">
+      <span class="eyebrow">ขั้นที่ 08</span>
+      <h2>นำเข้าคะแนนจาก Excel</h2>
+      <p>กด <span class="k">📊 นำเข้าคะแนนจาก Excel</span> เลือกไฟล์ <code>.xlsx</code> / <code>.xls</code> / <code>.csv</code> หรือกด <span class="k">⌨ วางคะแนน</span> แล้ววางตารางจาก Excel โดยตรง (ต้องมีรายชื่อนักเรียนในโปรแกรมก่อน)</p>
+
+      <h3>รูปแบบตาราง</h3>
+      <pre>รหัสประจำตัว   ชื่อ-สกุล              1   2   3   4  ...  18
+67301050001    นางสาวจันทร์จิรา ...   10  8       9  ...
+67301050002    นายชนิสร อนันทสุข      9       7   8  ...</pre>
+      <ul>
+        <li><strong>แถวหัวตาราง</strong> เป็นเลข <code>1</code>–<code>18</code> หรือ <code>สป.1</code>–<code>สป.18</code> (ถ้าไม่มีหัวตาราง ระบบจะไล่คอลัมน์ตัวเลขเป็นสัปดาห์ 1, 2, 3… ให้)</li>
+        <li>ต้องมีคอลัมน์ <strong>รหัสประจำตัว</strong> หรือ <strong>ชื่อ-สกุล</strong> เพื่อจับคู่ (ใช้รหัสก่อน ถ้าไม่เจอใช้ชื่อ)</li>
+        <li><strong>ช่องว่าง</strong> ในไฟล์ = ไม่แตะต้องคะแนนเดิม</li>
+        <li>แถวชื่อ <strong>“คะแนนเต็ม”</strong> ในไฟล์ → เติมช่อง “เต็ม” ของรายการมอบหมายงานให้</li>
+        <li>คอลัมน์หัวชื่อ <strong>“จิตพิสัย”</strong> ในไฟล์ → ใส่ช่องจิตพิสัยให้</li>
+      </ul>
+
+      <h3>ตัวเลือกก่อนยืนยัน</h3>
+      <ul>
+        <li><strong>เขียนทับคะแนนเดิม</strong> — ปิดไว้ถ้าต้องการเติมเฉพาะช่องที่ยังว่าง</li>
+        <li><strong>ช่องที่มีคะแนน = ส่งงานแล้ว</strong> — ตั้งสามเหลี่ยมทึบให้อัตโนมัติเมื่อคะแนนมากกว่า 0</li>
+      </ul>
+      <div class="callout tip">
+        <span class="ci">ไฟล์ทดสอบ</span>
+        <p>ในโฟลเดอร์โปรแกรมมี <code>test-scores.xlsx</code> — รายชื่อตรงกับตัวอย่าง 14 คน มีคะแนน สป.1–10 และแถวคะแนนเต็ม ไว้ลองนำเข้าดูผลก่อนใช้จริง</p>
+      </div>
+    </section>
+
+    <section id="s9">
+      <span class="eyebrow">ขั้นที่ 09</span>
+      <h2>นำเข้าคะแนนจิตพิสัยจาก PDF</h2>
+      <p>กด <span class="k">🙂 นำเข้าจิตพิสัย (PDF/Excel)</span> แล้วเลือก <strong>แบบสรุปผลการประเมินด้านคุณธรรม จริยธรรม ค่านิยมและคุณลักษณะอันพึงประสงค์ (จิตพิสัย)</strong> หรือกด <span class="k">⌨ วางจิตพิสัย</span> เพื่อวางเอง</p>
+      <ul>
+        <li>โปรแกรมอ่านทุกแถว <code>ลำดับที่ · ชื่อ-สกุล · [คะแนนรายข้อ] · คะแนน · จิตพิสัย</code></li>
+        <li>ใช้ <strong>ตัวเลขคอลัมน์สุดท้ายของแต่ละแถว</strong> = ช่อง “จิตพิสัย = คะแนนที่ได้ × 20” เช่น <code>20.0</code></li>
+        <li>จับคู่นักเรียนด้วย <strong>ชื่อ-สกุล</strong> (แบบสรุปจิตพิสัยมักไม่มีรหัสประจำตัว) — เทียบแบบไม่สนวรรณยุกต์ที่หายจาก PDF</li>
+        <li>ข้ามบรรทัดหัวตาราง เกณฑ์การประเมิน และคำอธิบายระดับ (ระดับ 2 = ปฏิบัติเป็นประจำ ฯลฯ) อัตโนมัติ</li>
+      </ul>
+      <div class="callout">
+        <span class="ci">ลำดับ</span>
+        <p>นำเข้ารายชื่อห้องนั้นก่อน (ขั้นที่ 7) แล้วจึงนำเข้าจิตพิสัย เพื่อให้จับคู่ชื่อได้</p>
+      </div>
+    </section>
+
+    <section id="s10">
+      <span class="eyebrow">ขั้นที่ 10</span>
+      <h2>บันทึกและเปิดไฟล์ข้อมูล</h2>
+      <h3>บันทึกอัตโนมัติ</h3>
+      <p>ทุกการแก้ไขถูกบันทึกลงในเบราว์เซอร์เองทันที เปิดโปรแกรมใหม่ครั้งหน้าได้ข้อมูลเดิมกลับมา</p>
+      <div class="callout warn">
+        <span class="ci">สำคัญ</span>
+        <p>ข้อมูลบันทึกอัตโนมัติผูกกับ <strong>เบราว์เซอร์และเครื่องนั้นเครื่องเดียว</strong> — ไม่ตามไปเครื่องอื่น และจะหายถ้าล้างประวัติ/ข้อมูลเว็บไซต์ของเบราว์เซอร์</p>
+        <p>ควรกด <span class="k">💾 บันทึกไฟล์ข้อมูล (.json)</span> เก็บสำรองไว้เป็นระยะ</p>
+      </div>
+      <h3>ไฟล์ข้อมูล .json</h3>
+      <ul>
+        <li><span class="k">💾 บันทึกไฟล์ข้อมูล</span> — ดาวน์โหลดข้อมูลทั้งหมด (ส่วนหัว, รายชื่อ, สถานะช่อง, คะแนน, จิตพิสัย, รายการมอบหมายงาน) เป็นไฟล์เดียว</li>
+        <li><span class="k">📂 เปิดไฟล์ข้อมูล</span> — โหลดไฟล์ .json กลับเข้ามา (แทนที่ข้อมูลปัจจุบัน)</li>
+        <li>ใช้ไฟล์ .json แยกกันสำหรับ <strong>แต่ละรายวิชา / แต่ละภาคเรียน</strong> แล้วสลับด้วยการเปิดไฟล์</li>
+      </ul>
+      <h3>เริ่มใหม่</h3>
+      <p><span class="k">♻ เริ่มใหม่</span> ล้างข้อมูลกลับค่าเริ่มต้น (รายชื่อตัวอย่าง 14 คน) — มีถามยืนยันก่อน</p>
+    </section>
+
+    <section id="s11">
+      <span class="eyebrow">ขั้นที่ 11</span>
+      <h2>พิมพ์ / บันทึกเป็น PDF</h2>
+      <ol class="steps">
+        <li>กด <span class="k">🖨 พิมพ์ / บันทึกเป็น PDF</span></li>
+        <li>ในหน้าต่างพิมพ์ เลือกปลายทาง (Destination) เป็น <strong>“บันทึกเป็น PDF / Save as PDF”</strong> — หรือเลือกเครื่องพิมพ์เพื่อพิมพ์กระดาษ</li>
+        <li>กด บันทึก / พิมพ์</li>
+      </ol>
+      <ul>
+        <li>จัดหน้าเป็น <strong>A4 แนวตั้ง</strong> ฟอนต์ย่อให้พอดี ครบทั้ง 18 สัปดาห์ + จิตพิสัย + รวมคะแนน</li>
+        <li>ปุ่มและเมนูทั้งหมดถูกซ่อนอัตโนมัติเวลาพิมพ์</li>
+        <li>ชื่อไฟล์ตั้งจากรายวิชา + ภาคเรียน + ปีการศึกษา</li>
+        <li>ข้อความไทยเป็นเวกเตอร์คมชัด (ไม่ใช่ภาพเบลอ) และไม่ต้องต่ออินเทอร์เน็ต</li>
+      </ul>
+      <div class="callout warn">
+        <span class="ci">ถ้าสามเหลี่ยมทึบไม่พิมพ์ออก</span>
+        <p>ในหน้าต่างพิมพ์ กด “ตัวเลือกเพิ่มเติม / More settings” แล้วเปิด <strong>“กราฟิกพื้นหลัง / Background graphics”</strong></p>
+      </div>
+      <div class="callout">
+        <span class="ci">หมายเหตุจากแบบฟอร์ม</span>
+        <p>สำเนาส่งฝ่ายวิชาการ สัปดาห์ที่ 4, 8, 12, 16 — แบบบันทึกนี้ใช้กับรายวิชาทฤษฎีและรายวิชาทฤษฎี/ปฏิบัติ</p>
+      </div>
+    </section>
+
+    <section id="s12">
+      <span class="eyebrow">ขั้นที่ 12</span>
+      <h2>ปัญหาที่พบบ่อย</h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>อาการ</th><th>สาเหตุ / วิธีแก้</th></tr></thead>
+          <tbody>
+            <tr><td>ชื่อภาษาไทยที่นำเข้าเพี้ยน / มี □</td><td>ฟอนต์ใน PDF ใช้รหัสพิเศษ — โปรแกรมแก้ให้ระดับหนึ่ง ที่เหลือแก้ในหน้าต่างตัวอย่างก่อนยืนยัน หรือใช้ <span class="k">⌨ วาง/พิมพ์</span> คัดลอกจาก Excel/Word ต้นฉบับ</td></tr>
+            <tr><td>นำเข้า PDF แล้วไม่ขึ้นรายชื่อ</td><td>ไฟล์เป็นภาพสแกน (ไม่มีข้อความ) หรือยังไม่ได้ต่ออินเทอร์เน็ตครั้งแรก — ใช้ปุ่มวาง/พิมพ์แทน</td></tr>
+            <tr><td>นำเข้าคะแนนแล้วไม่เข้า</td><td>ยังไม่มีรายชื่อนักเรียนในตาราง (ต้องนำเข้ารายชื่อก่อน) หรือรหัส/ชื่อในไฟล์ไม่ตรงกับในตาราง — ดูรายการ “จับคู่ไม่ได้” ในหน้าต่างตัวอย่าง</td></tr>
+            <tr><td>ข้อมูลหายหมด</td><td>เบราว์เซอร์ถูกล้างข้อมูลเว็บ หรือเปิดคนละเครื่อง/คนละเบราว์เซอร์ — กู้จากไฟล์ <code>.json</code> ที่บันทึกสำรองไว้ (<span class="k">📂 เปิดไฟล์ข้อมูล</span>)</td></tr>
+            <tr><td>อยากทำหลายวิชาพร้อมกัน</td><td>บันทึกแต่ละวิชาเป็นไฟล์ <code>.json</code> แยก แล้วสลับด้วย <span class="k">📂 เปิดไฟล์ข้อมูล</span></td></tr>
+            <tr><td>เปิดไฟล์แล้วหน้าจอว่าง / ปุ่มไม่ทำงาน</td><td>เปิดด้วย Internet Explorer หรือเบราว์เซอร์เก่า — ใช้ Chrome หรือ Edge รุ่นปัจจุบัน</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s13">
+      <span class="eyebrow">ขั้นที่ 13</span>
+      <h2>อัปเดตโปรแกรมจาก GitHub</h2>
+      <p>โค้ดล่าสุดอยู่ที่ <a class="link" href="https://github.com/wpoosommai/progress-chart">github.com/wpoosommai/progress-chart</a></p>
+      <ul>
+        <li><strong>ดาวน์โหลดไฟล์ใหม่</strong> — เปิด repo → <code>index.html</code> → ปุ่ม Download raw file → เขียนทับไฟล์เดิม</li>
+        <li><strong>ใช้ผ่านเว็บ</strong> — เปิด GitHub Pages ครั้งเดียว (repo → Settings → Pages → Source: <code>main</code> / <code>(root)</code> → Save) แล้วใช้ที่ <a class="link" href="https://wpoosommai.github.io/progress-chart/">wpoosommai.github.io/progress-chart</a> ซึ่งอัปเดตอัตโนมัติทุกครั้งที่ push</li>
+      </ul>
+      <p>ข้อมูลที่บันทึกอัตโนมัติไว้ <strong>ยังอยู่</strong> หลังอัปเดต เพราะผูกกับเบราว์เซอร์ ไม่ใช่กับไฟล์</p>
+      <h3>สำหรับผู้ดูแลโค้ด — push การแก้ไข</h3>
+      <pre>cd "C:\Users\Weerawat\Documents\ProgressChart"
+git add index.html
+git commit -m "อัปเดต ..."
+git push</pre>
+    </section>
+
+  </article>
+
+  <footer>
+    <span class="sig">คู่มือ Progress Chart</span>
+    <span>แบบบันทึกความก้าวหน้าทางการเรียน · วิทยาลัยเทคนิคศรีสะเกษ</span>
+    <span>github.com/wpoosommai/progress-chart</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
