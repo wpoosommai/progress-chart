@@ -1164,10 +1164,11 @@
 
   // ตาราง Thai PUA (F700–F71D) ที่ฟอนต์ไทยรุ่นเก่า/Word ใช้แทนสระ-วรรณยุกต์
   // แบบจัดตำแหน่งเอง  ->  แปลงกลับเป็น Unicode ไทยมาตรฐาน (แก้ปัญหา "์" กลายเป็น □)
+  // ยืนยันจากไฟล์ ศธ.02 ของวิทยาลัย: F70A-F70E = ่ ้ ๊ ๋ ์ (แบบชิดซ้าย), F702 = ี
   var THAI_PUA = {
-    0xF700:0x0E4D,0xF701:0x0E48,0xF702:0x0E49,0xF703:0x0E4A,0xF704:0x0E4B,
+    0xF700:0x0E48,0xF701:0x0E49,0xF702:0x0E35,0xF703:0x0E4A,0xF704:0x0E4B,
     0xF705:0x0E4C,0xF706:0x0E48,0xF707:0x0E49,0xF708:0x0E4A,0xF709:0x0E4B,
-    0xF70A:0x0E4C,0xF70B:0x0E4D,0xF70C:0x0E31,0xF70D:0x0E34,0xF70E:0x0E35,
+    0xF70A:0x0E48,0xF70B:0x0E49,0xF70C:0x0E4A,0xF70D:0x0E4B,0xF70E:0x0E4C,
     0xF70F:0x0E36,0xF710:0x0E37,0xF711:0x0E4D,0xF712:0x0E47,0xF713:0x0E48,
     0xF714:0x0E49,0xF715:0x0E4A,0xF716:0x0E4B,0xF717:0x0E4C,0xF718:0x0E38,
     0xF719:0x0E39,0xF71A:0x0E3A,0xF71B:0x0E38,0xF71C:0x0E39,0xF71D:0x0E3A
@@ -1323,38 +1324,59 @@
   function parseRosterHead(text){
     if(!text) return {};
     var C=String(text).replace(/[.…_]{2,}/g,' ').replace(/[ \t]{2,}/g,' ');
+    var lines=C.split('\n').map(function(l){ return l.replace(/\s+/g,' ').trim(); });
     var h={};
-    h.code = (_grab(C,'รหัสวิชา','([0-9]{3,6}\\s*[-\\u2013]\\s*[0-9]{2,4})') ||
-              _grab(C,'รหัสวิชา','([0-9]{6,10})')).replace(/\s/g,'');
-    var sm=C.match(new RegExp(looseThaiRe('ชื่อวิชา')+'[\\s:：\\.]*([^\\n]{2,70}?)\\s*(?:'+
-      looseThaiRe('หน่วยกิต')+'|'+looseThaiRe('รหัสวิชา')+'|'+looseThaiRe('ภาคเรียน')+'|'+
-      looseThaiRe('ปีการศึกษา')+'|'+looseThaiRe('กลุ่ม')+'|'+looseThaiRe('ระดับ')+'|\\n|$)'));
-    h.subject = sm ? sm[1].trim() : '';
-    var ym=C.match(new RegExp(looseThaiRe('ปีการศึกษา')+'[\\s:：ที่\\.]*([1-3])\\s*[\\/\\uFF0F]\\s*(2[0-9]{3})'));
-    if(ym){ h.term=ym[1]; h.year=ym[2]; }
-    else {
-      var y2=C.match(new RegExp(looseThaiRe('ปีการศึกษา')+'[\\s:：ที่\\.]*(2[0-9]{3})'));
-      if(y2) h.year=y2[1];
+    var firstStu=-1;
+    for(var li=0;li<lines.length;li++){ if(/^\s*\d{1,3}\s+\d{6,13}\b/.test(lines[li])){ firstStu=li; break; } }
+    var top = lines.slice(0, firstStu>0? firstStu : 12);
+
+    function labelLine(pred){ for(var i=0;i<top.length;i++){ if(pred(bareThai(top[i]))) return i; } return -1; }
+
+    // ---- แถวป้ายกำกับ "รหัสวิชา ... ชื่อวิชา ..." ; ค่าจริงอยู่บรรทัดก่อนหน้า (ฟอร์มกรอกในช่องว่าง) ----
+    var li1 = labelLine(function(b){ return b.indexOf('รหสวชา')>=0 && b.indexOf('ชอวชา')>=0; });
+    var vRow='';
+    if(li1>0 && /\d{3,6}\s*-\s*\d{2,4}/.test(top[li1-1])) vRow=top[li1-1];
+    else if(li1>=0 && /\d{3,6}\s*-\s*\d{2,4}/.test(top[li1])) vRow=top[li1];  // รูปแบบ label+value บรรทัดเดียว
+    else { for(var k=0;k<top.length;k++){ if(/^\s*\d{3,6}\s*-\s*\d{2,4}\s+[ก-๙]/.test(top[k])){ vRow=top[k]; break; } } }
+
+    if(vRow){
+      var cm=vRow.match(/(\d{3,6}\s*-\s*\d{2,4})/);
+      if(cm) h.code=cm[1].replace(/\s/g,'');
+      var ty=vRow.match(/([1-3])\s*[\/／]\s*(25\d{2}|26\d{2})/);
+      if(ty){ h.term=ty[1]; h.year=ty[2]; }
+      var sm=vRow.match(/\d{3,6}\s*-\s*\d{2,4}\s+([ก-๙][^\n]*?)\s*(?:[1-3]\s*[\/／]\s*2\d{3}|$)/);
+      if(sm) h.subject=sm[1].replace(/\s+/g,' ').replace(/[ .\-–]+$/,'').trim();
     }
-    if(!h.term){
-      var tm=C.match(new RegExp(looseThaiRe('ภาคเรียน')+'[\\s:：ที่\\.]*([1-3])(?!\\s*[0-9])'));
-      if(tm) h.term=tm[1];
+    // สำรอง: label+value ติดกัน / อยู่ที่ใดก็ได้
+    if(!h.code){ var c2=C.match(new RegExp(looseThaiRe('รหัสวิชา')+'[\\s:：.]{0,6}(\\d{3,6}\\s*-\\s*\\d{2,4})')); if(c2) h.code=c2[1].replace(/\s/g,''); }
+    if(!h.subject){ var s2=C.match(new RegExp(looseThaiRe('ชื่อวิชา')+'[\\s:：.]{0,4}([ก-๙][^\\n]{2,60}?)\\s*(?:'+looseThaiRe('หน่วยกิต')+'|'+looseThaiRe('ปีการศึกษา')+'|'+looseThaiRe('รหัสวิชา')+'|\\n|$)')); if(s2) h.subject=s2[1].replace(/[ .]+$/,'').trim(); }
+    if(!h.year){ var y3=C.match(/([1-3])\s*[\/／]\s*(25\d{2}|26\d{2})/); if(y3){ h.term=h.term||y3[1]; h.year=y3[2]; } }
+    if(!h.term){ var tmm=C.match(new RegExp(looseThaiRe('ภาคเรียน')+'[\\s:：.]{0,6}([1-3])(?!\\s*[0-9])')); if(tmm) h.term=tmm[1]; }
+
+    // ---- ครูผู้สอน : แถวป้าย "...ชื่อครูผู้สอน..." ค่าจริงอยู่บรรทัดก่อนหน้า "<รหัสกลุ่ม> <ชื่อครู>" ----
+    var li2 = labelLine(function(b){ return b.indexOf('ครผสอน')>=0; });
+    if(li2>0){
+      var tRow=top[li2-1];
+      var tm=tRow.match(/(?:\d{6,10}\s+)?((?:นาย|นาง|นางสาว|น\.ส\.)\s*\S[^\n\d]{1,40})\s*$/);
+      if(tm) h.teacher=tm[1].replace(/\s+/g,' ').trim();
     }
-    var tea=C.match(new RegExp('(?:'+looseThaiRe('ชื่อครูผู้สอน')+'|'+looseThaiRe('ครูผู้สอน')+'|'+
-      looseThaiRe('ครูประจำวิชา')+'|'+looseThaiRe('อาจารย์ผู้สอน')+'|'+looseThaiRe('อาจารย์ประจำวิชา')+
-      ')[\\s:：\\.]*((?:นาย|นาง|นางสาว|น\\.ส\\.)\\s*\\S[^\\n\\d]{1,40})'));
-    h.teacher = tea ? tea[1].replace(/\s+/g,' ').trim() : '';
     if(!h.teacher){
-      // ชื่อครูมักอยู่บรรทัดเดี่ยว ๆ ก่อนแถวนักเรียนแรก
-      var lines=C.split('\n');
-      var firstStu=-1;
-      for(var li=0;li<lines.length;li++){ if(/^\s*\d{1,3}\s+\d{6,13}\b/.test(lines[li])){ firstStu=li; break; } }
-      var scope=lines.slice(0, firstStu>0?firstStu:8);
-      for(var si=scope.length-1;si>=0;si--){
-        var mm=scope[si].match(/^\s*((?:นาย|นาง|นางสาว|น\.ส\.)\s*\S.{1,36}?)\s*$/);
+      var tea=C.match(new RegExp('(?:'+looseThaiRe('ชื่อครูผู้สอน')+'|'+looseThaiRe('ครูผู้สอน')+'|'+
+        looseThaiRe('ครูประจำวิชา')+'|'+looseThaiRe('อาจารย์ผู้สอน')+'|'+looseThaiRe('อาจารย์ประจำวิชา')+
+        ')[\\s:：.]{0,4}((?:นาย|นาง|นางสาว|น\\.ส\\.)\\s*\\S[^\\n\\d]{1,40})'));
+      if(tea) h.teacher=tea[1].replace(/\s+/g,' ').trim();
+    }
+    if(!h.teacher){
+      for(var si=top.length-1;si>=0;si--){
+        var mm=top[si].match(/^((?:นาย|นาง|นางสาว|น\.ส\.)\s*\S.{1,36}?)$/);
         if(mm && !isRosterJunk(mm[1])){ h.teacher=mm[1].replace(/\s+/g,' ').trim(); break; }
       }
     }
+
+    // ---- แผนกวิชา (ถ้ามีในหัวเอกสาร) ----
+    var dm=C.match(new RegExp(looseThaiRe('แผนกวิชา')+'[\\s:：.]{0,4}(?:'+looseThaiRe('แผนกวิชา')+'\\s*)?([ก-๙][^\\n]{2,40}?)\\s*(?:\\n|'+looseThaiRe('อาจารย์')+'|'+looseThaiRe('ครู')+'|$)'));
+    if(dm) h.dept=dm[1].replace(/[ .]+$/,'').trim();
+
     return h;
   }
   function showRosterHead(h){
@@ -1363,11 +1385,12 @@
     if(h.code) p.push('รหัสวิชา '+h.code);
     if(h.subject) p.push('ชื่อวิชา '+h.subject);
     if(h.teacher) p.push('ครูผู้สอน '+h.teacher);
+    if(h.dept) p.push('แผนกวิชา '+h.dept);
     if(h.term||h.year) p.push('ภาคเรียน '+(h.term||'?')+'/'+(h.year||'?'));
-    el.textContent = p.length ? ('พบหัวเอกสาร: '+p.join('  •  ')) : '';
+    el.textContent = p.length ? ('พบหัวเอกสาร: '+p.join('  •  ')) : 'ไม่พบข้อมูลหัวเอกสารในไฟล์นี้';
   }
   function applyRosterHead(h){
-    var map={code:'code',subject:'subject',teacher:'teacher',term:'term',year:'year'};
+    var map={code:'code',subject:'subject',teacher:'teacher',dept:'dept',term:'term',year:'year'};
     var n=0;
     for(var k in map){ if(h[k]){ state.head[map[k]]=h[k]; n++; } }
     // ครูประจำวิชาในช่องลงชื่อ ให้ตามครูผู้สอนถ้ายังว่าง
