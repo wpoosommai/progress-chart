@@ -223,6 +223,8 @@
   .ctxmenu .sep{height:1px;background:#e2e2e2;margin:5px 8px;}
   .ctxmenu button.danger{color:#c0332b;}
   .ctxmenu .hd{padding:6px 16px 3px;font-size:13px;font-weight:600;letter-spacing:.02em;color:#777;}
+  .ctxmenu .note{padding:8px 16px 6px;font-size:12.5px;line-height:1.55;color:#5a7a5a;
+    white-space:normal;max-width:320px;}
 
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;
     align-items:center;justify-content:center;padding:16px;}
@@ -261,7 +263,6 @@
   <a class="helpbtn" href="manual.html" target="_blank" rel="noopener">📘 คู่มือ</a>
   <span class="spacer"></span>
   <span id="saveState">พร้อมใช้งาน</span>
-  <span class="privline">🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วยเมนู ไฟล์ → บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง PIN ในเมนู ความปลอดภัย</span>
 </div>
 
 <div id="cmdStash" hidden aria-hidden="true">
@@ -651,7 +652,9 @@
       sec:[
         {label:"🔒 ล็อกหน้าจอ (Ctrl+L)", fn:function(){ g("btnLock").click(); }},
         {label:(masked?"👁 แสดงชื่อ-รหัส":"👁 ซ่อนชื่อ-รหัส (ตอนฉายจอ)"), fn:function(){ g("btnMask").click(); }},
-        {label:(pin?"🔑 เปลี่ยน / ลบ PIN":"🔑 ตั้ง PIN ล็อกหน้าจอ"), fn:function(){ g("btnPin").click(); }}
+        {label:(pin?"🔑 เปลี่ยน / ลบ PIN":"🔑 ตั้ง PIN ล็อกหน้าจอ"), fn:function(){ g("btnPin").click(); }},
+        "-",
+        {note:"🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วยเมนู ไฟล์ → บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง PIN เพื่อล็อกหน้าจออัตโนมัติเมื่อไม่ใช้งาน 10 นาที"}
       ]
     };
     return M[name]||[];
@@ -752,6 +755,7 @@
     items.forEach(function(it){
       if(it==='-'){ var s=document.createElement('div'); s.className='sep'; ctxMenu.appendChild(s); return; }
       if(it && it.head){ var hd=document.createElement('div'); hd.className='hd'; hd.textContent=it.head; ctxMenu.appendChild(hd); return; }
+      if(it && it.note){ var nt=document.createElement('div'); nt.className='note'; nt.textContent=it.note; ctxMenu.appendChild(nt); return; }
       var b=document.createElement('button');
       b.textContent=it.label;
       if(it.danger) b.className='danger';
