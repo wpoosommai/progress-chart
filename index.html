@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src data:; connect-src 'self' blob: https://cdnjs.cloudflare.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>แบบบันทึกความก้าวหน้าทางการเรียน (Progress Chart)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root{
     --line:#000;
@@ -32,6 +34,22 @@
   .toolbar .spacer{flex:1;}
   .toolbar .hint{font-size:12px;color:#bbb;}
   #saveState{font-size:12px;color:#8f8;}
+  .toolbar .privline{flex-basis:100%;font-size:11px;color:#7fb37f;padding-top:2px;}
+  /* ปิดบังชื่อ-รหัสตอนฉายจอ */
+  body.masked .id-in, body.masked .name-in{ -webkit-text-security:disc; }
+  /* ล็อกหน้าจอ */
+  #lockScreen{position:fixed;inset:0;z-index:9999;display:none;background:#1b2430;color:#e9eef4;
+    flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;
+    font-family:"TH Sarabun New","Sarabun","Tahoma",sans-serif;}
+  #lockScreen.on{display:flex;}
+  #lockScreen .lk-title{font-size:22px;font-weight:700;}
+  #lockScreen .lk-sub{font-size:15px;color:#9fb1c2;max-width:420px;}
+  #lockScreen input{font-size:24px;letter-spacing:8px;text-align:center;width:190px;padding:10px;
+    border-radius:8px;border:1px solid #3a4a5a;background:#131b25;color:#fff;}
+  #lockScreen button{font-family:inherit;font-size:16px;padding:9px 26px;border-radius:8px;border:0;
+    background:#2f6fd0;color:#fff;cursor:pointer;}
+  #lockScreen .lk-err{color:#ff9a9a;font-size:13px;min-height:16px;}
+  @media print{ #lockScreen{display:none!important;} body.masked .id-in,body.masked .name-in{-webkit-text-security:none;} }
 
   .page{
     background:#fff; max-width:1180px; margin:16px auto; padding:24px 28px;
@@ -197,6 +215,13 @@
 </style>
 </head>
 <body>
+<div id="lockScreen" role="dialog" aria-modal="true" aria-label="ล็อกหน้าจอ">
+  <div class="lk-title">🔒 ล็อกหน้าจอ</div>
+  <div class="lk-sub" id="lkSub">ใส่ PIN เพื่อปลดล็อก</div>
+  <input id="lkPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8">
+  <div class="lk-err" id="lkErr"></div>
+  <button id="lkBtn">ปลดล็อก</button>
+</div>
 
 <div class="toolbar">
   <button id="btnAddStudent">+ เพิ่มนักเรียน</button>
@@ -213,9 +238,14 @@
   <label class="filebtn">📂 เปิดไฟล์ข้อมูล<input id="fileImport" type="file" accept="application/json" hidden></label>
   <button id="btnDemo">🧪 ข้อมูลตัวอย่าง (20 คน)</button>
   <button id="btnReset">♻ เริ่มใหม่</button>
+  <button id="btnWipe" title="ลบข้อมูลทั้งหมดออกจากเบราว์เซอร์เครื่องนี้อย่างถาวร">🧹 ลบข้อมูลออกจากเครื่อง</button>
+  <button id="btnMask" title="ปิดบังชื่อ-รหัสนักเรียนบนจอ (สำหรับฉายจอ/แชร์หน้าจอ)">👁 ซ่อนชื่อ</button>
+  <button id="btnLock" title="ล็อกหน้าจอทันที (Ctrl+L)">🔒 ล็อก</button>
+  <button id="btnPin" title="ตั้ง/เปลี่ยน/ลบ PIN ล็อกหน้าจอ">🔑 PIN</button>
   <a class="helpbtn" href="manual.html" target="_blank" rel="noopener">📘 คู่มือ</a>
   <span class="spacer"></span>
   <span id="saveState">พร้อมใช้งาน</span>
+  <span class="privline">🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วย 💾 บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง 🔑 PIN เพื่อล็อกหน้าจออัตโนมัติ</span>
   <span class="hint">คลิกช่อง = สลับสถานะ (ว่าง → เส้นทแยง → ระบายสามเหลี่ยมบน) • พิมพ์ตัวเลขมุมล่างขวา = คะแนน • คลิกขวา = เมนู (ล้างช่อง / แก้คะแนนเต็ม / ตั้งทั้งคอลัมน์ / ลบนักเรียน / วันหยุด …)<br>คลิกเลขหัวสัปดาห์ (1–18) = ตั้งทั้งคอลัมน์ให้ทุกคน (ครั้งที่ 1 มอบหมายงาน / ครั้งที่ 2 ส่งงาน + ใส่คะแนนเต็ม / ครั้งที่ 3 ล้าง)</span>
 </div>
 
@@ -431,6 +461,83 @@
   function flash(msg){
     var el=document.getElementById("saveState");
     if(el) el.textContent=msg;
+  }
+
+  /* ---------- ความปลอดภัย / ความเป็นส่วนตัว ---------- */
+  var PIN_KEY = "progressChart.pin";
+  var LOCK_IDLE_MS = 10*60*1000;
+  var _idleTimer=null, _lockEl,_lkPin,_lkErr,_lkSub;
+  var HAS_CRYPTO = !!(window.crypto && window.crypto.subtle && window.crypto.getRandomValues);
+  function _hex(u8){ return [].map.call(u8,function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }
+  function sha256Hex(str){
+    return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str))
+      .then(function(d){ return _hex(new Uint8Array(d)); });
+  }
+  function pinRecord(){ if(!HAS_CRYPTO) return null; try{ return JSON.parse(localStorage.getItem(PIN_KEY)||"null"); }catch(e){ return null; } }
+  function savePin(np){
+    if(!/^[0-9]{4,8}$/.test(np)){ alert("PIN ต้องเป็นตัวเลข 4–8 หลัก"); return; }
+    var salt=_hex(crypto.getRandomValues(new Uint8Array(8)));
+    sha256Hex(salt+":"+np).then(function(hx){
+      localStorage.setItem(PIN_KEY, JSON.stringify({salt:salt,hash:hx}));
+      alert("ตั้ง PIN แล้ว — หน้าจอจะล็อกอัตโนมัติเมื่อไม่มีการใช้งาน "+(LOCK_IDLE_MS/60000)+" นาที");
+      lockNow();
+    });
+  }
+  function setPinFlow(){
+    if(!HAS_CRYPTO){ alert("เบราว์เซอร์/บริบทนี้ตั้ง PIN ไม่ได้ (ต้องเปิดผ่าน https:// หรือเปิดไฟล์ index.html โดยตรง)\nยังใช้ปุ่ม \U0001f512 ล็อก เพื่อบังหน้าจอชั่วคราวได้"); return; }
+    var cur=pinRecord();
+    if(!cur){ var np=prompt("ตั้ง PIN 4–8 หลัก สำหรับล็อกหน้าจอ"); if(np!==null) savePin(np.trim()); return; }
+    var w=prompt("ใส่ PIN ปัจจุบันเพื่อเปลี่ยน/ลบ"); if(w===null) return;
+    sha256Hex(cur.salt+":"+w.trim()).then(function(hx){
+      if(hx!==cur.hash){ alert("PIN ไม่ถูกต้อง"); return; }
+      var np=prompt("ตั้ง PIN ใหม่ 4–8 หลัก (เว้นว่าง = ลบ PIN)"); if(np===null) return; np=np.trim();
+      if(np===""){ localStorage.removeItem(PIN_KEY); alert("ลบ PIN แล้ว"); return; }
+      savePin(np);
+    });
+  }
+  function lockNow(){
+    if(!_lockEl) return;
+    var rec=pinRecord();
+    _lkSub.textContent = rec ? "ใส่ PIN เพื่อปลดล็อก" : 'กด "ปลดล็อก" เพื่อกลับเข้าใช้งาน';
+    _lkPin.style.display = rec ? "" : "none";
+    _lkErr.textContent=""; _lkPin.value="";
+    _lockEl.classList.add("on"); document.body.setAttribute("aria-hidden","true");
+    setTimeout(function(){ try{ _lkPin.focus(); }catch(e){} },30);
+  }
+  function _unlockDone(){ _lockEl.classList.remove("on"); document.body.removeAttribute("aria-hidden"); _lkPin.value=""; resetIdle(); }
+  function tryUnlock(){
+    var rec=pinRecord();
+    if(!rec){ _unlockDone(); return; }
+    sha256Hex(rec.salt+":"+_lkPin.value.trim()).then(function(hx){
+      if(hx===rec.hash){ _unlockDone(); }
+      else { _lkErr.textContent="PIN ไม่ถูกต้อง"; _lkPin.value=""; _lkPin.focus(); }
+    });
+  }
+  function resetIdle(){ clearTimeout(_idleTimer); if(pinRecord()) _idleTimer=setTimeout(lockNow, LOCK_IDLE_MS); }
+  function initSecurity(){
+    _lockEl=document.getElementById("lockScreen");
+    _lkPin=document.getElementById("lkPin"); _lkErr=document.getElementById("lkErr"); _lkSub=document.getElementById("lkSub");
+    document.getElementById("lkBtn").addEventListener("click", tryUnlock);
+    _lkPin.addEventListener("keydown", function(e){ if(e.key==="Enter") tryUnlock(); });
+    document.getElementById("btnLock").addEventListener("click", lockNow);
+    document.getElementById("btnPin").addEventListener("click", setPinFlow);
+    document.getElementById("btnMask").addEventListener("click", function(){
+      var on=document.body.classList.toggle("masked");
+      this.textContent = on ? "👁 แสดงชื่อ" : "👁 ซ่อนชื่อ";
+    });
+    document.getElementById("btnWipe").addEventListener("click", function(){
+      if(!confirm("ลบข้อมูลทั้งหมดออกจากเบราว์เซอร์เครื่องนี้อย่างถาวร?\n(รายชื่อ คะแนน PIN และค่าที่บันทึกไว้ — กู้คืนไม่ได้)")) return;
+      if(!confirm("ยืนยันอีกครั้ง — ถ้ายังไม่ได้สำรอง ให้กด ยกเลิก แล้วกด 💾 บันทึกไฟล์ข้อมูล ก่อน")) return;
+      try{ localStorage.removeItem(STORE_KEY); localStorage.removeItem(PIN_KEY); }catch(e){}
+      location.reload();
+    });
+    document.addEventListener("keydown", function(e){
+      if((e.ctrlKey||e.metaKey) && (e.key==="l"||e.key==="L")){ e.preventDefault(); lockNow(); }
+    });
+    ["mousemove","keydown","click","touchstart"].forEach(function(ev){
+      document.addEventListener(ev, resetIdle, {passive:true});
+    });
+    if(pinRecord()) lockNow(); else resetIdle();
   }
 
   /* ---------- render ---------- */
@@ -1545,6 +1652,7 @@
   renderHead();
   renderHeadValues();
   render();
+  try{ initSecurity(); }catch(e){ console.warn("security init:",e); }
 })();
 </script>
 </body>
