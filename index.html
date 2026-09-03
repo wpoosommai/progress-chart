@@ -31,6 +31,20 @@
   }
   .toolbar button:hover, .toolbar label.filebtn:hover, .toolbar a.helpbtn:hover{background:var(--accent);border-color:var(--accent);}
   .toolbar a.helpbtn{border-color:#8a7; color:#dfeadf;}
+  .toolbar .quickbtn{border-color:#c9a24a; color:#f4e6c4;}
+  #quickModal .box{max-width:560px;}
+  #quickModal h3{margin:0 0 4px;font-size:20px;}
+  .qh{list-style:none;margin:12px 0 4px;padding:0;font-size:15.5px;line-height:1.9;}
+  .qh li{padding:9px 0;border-bottom:1px solid #eee;}
+  .qh li:last-child{border-bottom:0;}
+  .qh b{color:#1f5fbf;}
+  .qh .sub{display:block;font-size:14px;color:#555;margin-top:2px;}
+  .qh-states{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 2px;font-size:13.5px;}
+  .qh-states .st{display:flex;align-items:center;gap:7px;}
+  .qh-states .sw{width:26px;height:26px;border:1.5px solid #000;position:relative;flex:none;background:#fff;}
+  .qh-states .sw.d1{background:linear-gradient(to top left,transparent calc(50% - .9px),#000 calc(50% - .9px),#000 calc(50% + .9px),transparent calc(50% + .9px));}
+  .qh-states .sw.d2{background:linear-gradient(to top left,transparent 49%,#000 49%);}
+  .qh-states .sw.d2::after{content:"8";position:absolute;right:2px;bottom:0;font-size:11px;}
   .toolbar .spacer{flex:1;}
   .toolbar .hint{font-size:12px;color:#bbb;}
   #saveState{font-size:12px;color:#8f8;}
@@ -243,11 +257,11 @@
   <button class="menubtn" data-menu="score">📝 คะแนน ▾</button>
   <button class="menubtn" data-menu="exp">📤 ส่งออก · พิมพ์ ▾</button>
   <button class="menubtn" data-menu="sec">🔒 ความปลอดภัย ▾</button>
+  <button id="btnQuick" class="quickbtn">❓ การใช้งานด่วน</button>
   <a class="helpbtn" href="manual.html" target="_blank" rel="noopener">📘 คู่มือ</a>
   <span class="spacer"></span>
   <span id="saveState">พร้อมใช้งาน</span>
   <span class="privline">🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วยเมนู ไฟล์ → บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง PIN ในเมนู ความปลอดภัย</span>
-  <span class="hint">คลิกช่อง = สลับสถานะ (ว่าง → เส้นทแยง → ระบายสามเหลี่ยมบน) • พิมพ์ตัวเลขมุมล่างขวา = คะแนน • คลิกขวา = เมนู (ล้างช่อง / แก้คะแนนเต็ม / ตั้งทั้งคอลัมน์ / ลบนักเรียน / วันหยุด …)<br>คลิกเลขหัวสัปดาห์ (1–18) = ตั้งทั้งคอลัมน์ให้ทุกคน (ครั้งที่ 1 มอบหมายงาน / ครั้งที่ 2 ส่งงาน + ใส่คะแนนเต็ม / ครั้งที่ 3 ล้าง)</span>
 </div>
 
 <div id="cmdStash" hidden aria-hidden="true">
@@ -320,6 +334,26 @@
       <button id="behCancel">ยกเลิก</button>
       <button id="behConfirm" class="primary">ยืนยันนำเข้า</button>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="quickModal">
+  <div class="box">
+    <h3>การใช้งานด่วน</h3>
+    <p class="sub" style="margin:0 0 6px;color:#666;font-size:13px;">วิธีกรอกตารางความก้าวหน้า</p>
+    <div class="qh-states">
+      <span class="st"><span class="sw d0"></span> ว่าง = ขาดเรียน</span>
+      <span class="st"><span class="sw d1"></span> เส้นทแยง = มอบหมายงานแล้ว</span>
+      <span class="st"><span class="sw d2"></span> สามเหลี่ยมทึบ = ส่งงานแล้ว</span>
+    </div>
+    <ul class="qh">
+      <li><b>คลิกช่อง</b> = สลับสถานะ (ว่าง → เส้นทแยง → ระบายสามเหลี่ยมบน)</li>
+      <li><b>พิมพ์ตัวเลขมุมล่างขวาของช่อง</b> = คะแนนของช่องนั้น</li>
+      <li><b>คลิกขวาที่ช่อง</b> = เมนู<span class="sub">ล้างช่อง / แก้คะแนนเต็ม / ตั้งทั้งคอลัมน์ / ลบนักเรียน / วันหยุด …</span></li>
+      <li><b>คลิกเลขหัวสัปดาห์ (1–18)</b> = ตั้งทั้งคอลัมน์ให้ทุกคน
+        <span class="sub">ครั้งที่ 1 → มอบหมายงาน · ครั้งที่ 2 → ส่งงาน + ใส่คะแนนเต็ม · ครั้งที่ 3 → ล้าง</span></li>
+    </ul>
+    <div class="act"><button id="quickClose" class="primary">เข้าใจแล้ว</button></div>
   </div>
 </div>
 
@@ -630,6 +664,12 @@
         openMenu(r.left, r.bottom+4, tbMenu(b.getAttribute("data-menu")));
       });
     });
+    var qm=document.getElementById("quickModal");
+    function closeQuick(){ qm.classList.remove("open"); }
+    document.getElementById("btnQuick").addEventListener("click",function(){ qm.classList.add("open"); });
+    document.getElementById("quickClose").addEventListener("click", closeQuick);
+    qm.addEventListener("click",function(e){ if(e.target===qm) closeQuick(); });
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeQuick(); });
   }
 
   /* ---------- render ---------- */
