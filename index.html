@@ -172,9 +172,10 @@
   .certify-text{text-align:center;margin:6px 0 2px;}
   .signs{display:flex;justify-content:space-around;margin:18px 0;text-align:center;line-height:1.7;}
   .signs .sig .fld{display:inline-block;border-bottom:1px dotted #000;min-width:150px;text-align:center;outline:none;padding:0 6px;}
-  .signs .sig .nm{display:block;text-align:left;padding-left:1.75em;margin-top:4px;}
+  .signs .sig .who{display:block;width:max-content;margin-left:1.75em;margin-top:4px;}
+  .signs .sig .nm{display:block;text-align:left;}
   .signs .sig .nm .fld{min-width:120px;}
-  .signs .sig .role{display:block;text-align:left;padding-left:1.75em;line-height:1.2;}
+  .signs .sig .role{display:block;text-align:center;line-height:1.2;}
   .signs .sig .fld:focus{background:#eef4ff;}
 
   .note{font-size:13px;line-height:1.6;margin-top:12px;}
@@ -434,13 +435,11 @@
   <div class="signs">
     <div class="sig">
       ลงชื่อ <span class="fld" contenteditable="true" data-k="sign1"></span><br>
-      <span class="nm">( <span class="fld" contenteditable="true" data-k="name1"></span> )</span>
-      <span class="role">ครูประจำวิชา</span>
+      <span class="who"><span class="nm">( <span class="fld" contenteditable="true" data-k="name1"></span> )</span><span class="role">ครูประจำวิชา</span></span>
     </div>
     <div class="sig">
       ลงชื่อ <span class="fld" contenteditable="true" data-k="sign2"></span><br>
-      <span class="nm">( <span class="fld" contenteditable="true" data-k="name2"></span> )</span>
-      <span class="role">หัวหน้าแผนกวิชา</span>
+      <span class="who"><span class="nm">( <span class="fld" contenteditable="true" data-k="name2"></span> )</span><span class="role">หัวหน้าแผนกวิชา</span></span>
     </div>
   </div>
 
