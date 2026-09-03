@@ -31,3 +31,7 @@
 - 👁 ซ่อนชื่อ-รหัส สำหรับตอนฉายจอ · 🧹 ลบข้อมูลออกจากเครื่อง
 - สคริปต์ภายนอกโหลดพร้อม Subresource Integrity (SRI) + Content-Security-Policy จำกัดการเชื่อมต่อออก
 - ไฟล์ข้อมูลนักเรียน (`.json`, ใบรายชื่อ `.pdf`, คะแนน `.xlsx`) ไม่ถูกนำขึ้น repo — ดู [`.gitignore`](.gitignore)
+
+## ผู้สนับสนุน
+
+[Pro Metal Sheet วังหิน](https://www.facebook.com/ProMetalSheetWangHin) — เมทัลชีท / หลังคาเหล็ก

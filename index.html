@@ -40,6 +40,13 @@
   .toolbar .menubtn:hover{background:var(--accent);border-color:var(--accent);}
   #cmdStash{display:none;}
   .ctxmenu{min-width:250px;}
+  .sponsor{max-width:1180px;margin:6px auto 28px;padding:10px 24px;text-align:center;
+    font-size:13px;color:#777;}
+  .sponsor a{color:#1877f2;text-decoration:none;font-weight:600;display:inline-flex;
+    align-items:center;gap:5px;}
+  .sponsor a:hover{text-decoration:underline;}
+  .sponsor svg{flex:none;}
+  @media print{ .sponsor{display:none !important;} }
   /* ปิดบังชื่อ-รหัสตอนฉายจอ */
   body.masked .id-in, body.masked .name-in{ -webkit-text-security:disc; }
   /* ล็อกหน้าจอ */
@@ -399,6 +406,14 @@
     <div style="margin-left:52px;">2. แบบบันทึกความก้าวหน้าทางการเรียน ใช้รายวิชาทฤษฎีและรายวิชาทฤษฎี/ปฏิบัติ</div>
   </div>
 
+</div>
+
+<div class="sponsor">
+  ผู้สนับสนุนโปรแกรม —
+  <a href="https://www.facebook.com/ProMetalSheetWangHin" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.26h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+    Pro Metal Sheet วังหิน (เมทัลชีท · หลังคาเหล็ก)
+  </a>
 </div>
 
 <script>
