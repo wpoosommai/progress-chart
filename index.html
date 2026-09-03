@@ -1393,8 +1393,8 @@
     var map={code:'code',subject:'subject',teacher:'teacher',dept:'dept',term:'term',year:'year'};
     var n=0;
     for(var k in map){ if(h[k]){ state.head[map[k]]=h[k]; n++; } }
-    // ครูประจำวิชาในช่องลงชื่อ ให้ตามครูผู้สอนถ้ายังว่าง
-    if(h.teacher && !state.head.name1) state.head.name1=h.teacher;
+    // ครูประจำวิชา (ชื่อในวงเล็บช่องลงชื่อ) = ครูผู้สอน เสมอ
+    if(h.teacher) state.head.name1=h.teacher;
     if(n){ renderHeadValues(); save(); }
     return n;
   }
