@@ -298,6 +298,10 @@
       <label><input type="radio" name="rosterMode" value="replace" checked> แทนที่รายชื่อเดิมทั้งหมด</label>
       <label><input type="radio" name="rosterMode" value="append"> เพิ่มต่อท้าย</label>
     </div>
+    <div class="opts">
+      <label><input type="checkbox" id="rosterHead" checked> นำหัวเอกสารมาด้วย (รหัสวิชา · ชื่อวิชา · ครูผู้สอน · ภาคเรียน/ปีการศึกษา)</label>
+    </div>
+    <div class="note-s" id="rosterHeadFound" style="color:#2a7a2a;"></div>
     <div class="act">
       <button id="rosterCancel">ยกเลิก</button>
       <button id="rosterConfirm" class="primary">ยืนยันนำเข้า</button>
@@ -1302,6 +1306,76 @@
     return out;
   }
 
+  /* ---------- ดึงหัวเอกสารจากไฟล์รายชื่อ (ศธ.02) ---------- */
+  var _rosterRaw = '';
+  // สร้าง regex ที่ยอมให้วรรณยุกต์/สระบน-ล่างมี/ไม่มีก็ได้ (PDF มักดึงมาไม่ครบ)
+  function looseThaiRe(label){
+    var mk='[\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E]*';
+    return label.replace(/[ัิ-ฺ็-๎]/g,'').split('').map(function(ch){
+      if(/[ก-ฮ]/.test(ch)) return ch+mk;               // พยัญชนะ -> ตามด้วยเครื่องหมายกี่ตัวก็ได้
+      return ch.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    }).join('');
+  }
+  function _grab(C, label, valRe){
+    var m=C.match(new RegExp(looseThaiRe(label)+'[\\s:：ที่\\.]*'+valRe));
+    return m ? m[1] : '';
+  }
+  function parseRosterHead(text){
+    if(!text) return {};
+    var C=String(text).replace(/[.…_]{2,}/g,' ').replace(/[ \t]{2,}/g,' ');
+    var h={};
+    h.code = (_grab(C,'รหัสวิชา','([0-9]{3,6}\\s*[-\\u2013]\\s*[0-9]{2,4})') ||
+              _grab(C,'รหัสวิชา','([0-9]{6,10})')).replace(/\s/g,'');
+    var sm=C.match(new RegExp(looseThaiRe('ชื่อวิชา')+'[\\s:：\\.]*([^\\n]{2,70}?)\\s*(?:'+
+      looseThaiRe('หน่วยกิต')+'|'+looseThaiRe('รหัสวิชา')+'|'+looseThaiRe('ภาคเรียน')+'|'+
+      looseThaiRe('ปีการศึกษา')+'|'+looseThaiRe('กลุ่ม')+'|'+looseThaiRe('ระดับ')+'|\\n|$)'));
+    h.subject = sm ? sm[1].trim() : '';
+    var ym=C.match(new RegExp(looseThaiRe('ปีการศึกษา')+'[\\s:：ที่\\.]*([1-3])\\s*[\\/\\uFF0F]\\s*(2[0-9]{3})'));
+    if(ym){ h.term=ym[1]; h.year=ym[2]; }
+    else {
+      var y2=C.match(new RegExp(looseThaiRe('ปีการศึกษา')+'[\\s:：ที่\\.]*(2[0-9]{3})'));
+      if(y2) h.year=y2[1];
+    }
+    if(!h.term){
+      var tm=C.match(new RegExp(looseThaiRe('ภาคเรียน')+'[\\s:：ที่\\.]*([1-3])(?!\\s*[0-9])'));
+      if(tm) h.term=tm[1];
+    }
+    var tea=C.match(new RegExp('(?:'+looseThaiRe('ชื่อครูผู้สอน')+'|'+looseThaiRe('ครูผู้สอน')+'|'+
+      looseThaiRe('ครูประจำวิชา')+'|'+looseThaiRe('อาจารย์ผู้สอน')+'|'+looseThaiRe('อาจารย์ประจำวิชา')+
+      ')[\\s:：\\.]*((?:นาย|นาง|นางสาว|น\\.ส\\.)\\s*\\S[^\\n\\d]{1,40})'));
+    h.teacher = tea ? tea[1].replace(/\s+/g,' ').trim() : '';
+    if(!h.teacher){
+      // ชื่อครูมักอยู่บรรทัดเดี่ยว ๆ ก่อนแถวนักเรียนแรก
+      var lines=C.split('\n');
+      var firstStu=-1;
+      for(var li=0;li<lines.length;li++){ if(/^\s*\d{1,3}\s+\d{6,13}\b/.test(lines[li])){ firstStu=li; break; } }
+      var scope=lines.slice(0, firstStu>0?firstStu:8);
+      for(var si=scope.length-1;si>=0;si--){
+        var mm=scope[si].match(/^\s*((?:นาย|นาง|นางสาว|น\.ส\.)\s*\S.{1,36}?)\s*$/);
+        if(mm && !isRosterJunk(mm[1])){ h.teacher=mm[1].replace(/\s+/g,' ').trim(); break; }
+      }
+    }
+    return h;
+  }
+  function showRosterHead(h){
+    var el=document.getElementById('rosterHeadFound'); if(!el) return;
+    var p=[];
+    if(h.code) p.push('รหัสวิชา '+h.code);
+    if(h.subject) p.push('ชื่อวิชา '+h.subject);
+    if(h.teacher) p.push('ครูผู้สอน '+h.teacher);
+    if(h.term||h.year) p.push('ภาคเรียน '+(h.term||'?')+'/'+(h.year||'?'));
+    el.textContent = p.length ? ('พบหัวเอกสาร: '+p.join('  •  ')) : '';
+  }
+  function applyRosterHead(h){
+    var map={code:'code',subject:'subject',teacher:'teacher',term:'term',year:'year'};
+    var n=0;
+    for(var k in map){ if(h[k]){ state.head[map[k]]=h[k]; n++; } }
+    // ครูประจำวิชาในช่องลงชื่อ ให้ตามครูผู้สอนถ้ายังว่าง
+    if(h.teacher && !state.head.name1) state.head.name1=h.teacher;
+    if(n){ renderHeadValues(); save(); }
+    return n;
+  }
+
   // ดึงคู่ (รหัส 6-13 หลัก + ชื่อ)
   function parseRoster(raw){
     var grid=parseRosterGrid(raw);
@@ -1404,6 +1478,7 @@
 
   function rosterFromText(text, fname){
     var list=parseRoster(text);
+    _rosterRaw = text || '';
     flash('พร้อมใช้งาน');
     if(!list.length){
       openRoster(text.trim(),
@@ -1411,6 +1486,7 @@
     }else{
       openRoster(toLines(list), 'พบ '+list.length+' รายชื่อจากไฟล์ "'+fname+'" — ตรวจสอบ/แก้ไขก่อนยืนยัน');
     }
+    showRosterHead(parseRosterHead(_rosterRaw));
   }
 
   document.getElementById('fileRoster').addEventListener('change',function(e){
@@ -1548,19 +1624,35 @@
   });
 
   document.getElementById('btnPasteRoster').addEventListener('click',function(){
+    _rosterRaw='';
+    var el=document.getElementById('rosterHeadFound'); if(el) el.textContent='';
     openRoster('', 'วางหรือพิมพ์รายชื่อ 1 คนต่อบรรทัด — รูปแบบ: รหัสประจำตัว <เว้นวรรค> ชื่อ-สกุล (คัดลอกจาก Excel/Word ได้เลย)');
+  });
+  document.getElementById('rosterText').addEventListener('input',function(){
+    // เผื่อวางข้อความทั้งบล็อก (มีหัวเอกสาร) — ลองอ่านหัวจาก textarea
+    if(!_rosterRaw) showRosterHead(parseRosterHead(this.value));
   });
 
   document.getElementById('rosterConfirm').addEventListener('click',function(){
     var list=linesToStudents(document.getElementById('rosterText').value);
     if(!list.length){ alert('ไม่มีรายชื่อให้นำเข้า'); return; }
+    var hh=parseRosterHead(_rosterRaw || document.getElementById('rosterText').value);
+    // กันชื่อครูผู้สอนหลุดเข้ามาเป็นนักเรียน (บรรทัดชื่อไม่มีรหัส)
+    if(hh.teacher){
+      var tb=bareThai(hh.teacher);
+      list=list.filter(function(s){ return s.id || bareThai(s.name)!==tb; });
+    }
     var mode=document.querySelector('input[name="rosterMode"]:checked').value;
     var mk=function(s){ return {id:s.id||'',name:s.name||'',cells:new Array(WEEKS).fill(0),scores:new Array(WEEKS).fill(""),behavior:""}; };
     if(mode==='replace') state.students=list.map(mk);
     else state.students=state.students.concat(list.map(mk));
+    var nH=0;
+    if(document.getElementById('rosterHead').checked){
+      nH = applyRosterHead(hh);
+    }
     closeRoster();
     renderBody(); save();
-    flash('นำเข้า '+list.length+' รายชื่อแล้ว ✓');
+    flash('นำเข้า '+list.length+' รายชื่อ'+(nH?(' + หัวเอกสาร '+nH+' ช่อง'):'')+' แล้ว ✓');
   });
 
   /* ---------- นำเข้าคะแนนจาก Excel ---------- */
