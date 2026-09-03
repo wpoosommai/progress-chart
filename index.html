@@ -199,13 +199,13 @@
 <div class="toolbar">
   <button id="btnAddStudent">+ เพิ่มนักเรียน</button>
   <button id="btnAddBlank">+ แถวว่าง</button>
-  <label class="filebtn">📋 นำเข้ารายชื่อจาก PDF<input id="fileRoster" type="file" accept="application/pdf" hidden></label>
+  <label class="filebtn">📋 นำเข้ารายชื่อ (ศธ.02 / PDF / Excel)<input id="fileRoster" type="file" accept=".pdf,.xlsx,.xls,.csv,application/pdf" hidden></label>
   <button id="btnPasteRoster">⌨ วาง/พิมพ์รายชื่อ</button>
   <label class="filebtn">📊 นำเข้าคะแนนจาก Excel<input id="fileScore" type="file" accept=".xlsx,.xls,.csv" hidden></label>
   <button id="btnPasteScore">⌨ วางคะแนน</button>
-  <label class="filebtn">🙂 นำเข้าจิตพิสัย (PDF/Excel)<input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden></label>
+  <label class="filebtn">🙂 นำเข้าจิตพิสัย (ศธ.02 / PDF / Excel)<input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden></label>
   <button id="btnPasteBeh">⌨ วางจิตพิสัย</button>
-  <button id="btnExportScore">📤 ส่งออกคะแนน (Excel)</button>
+  <button id="btnExportScore">📤 ส่งออกคะแนน → ศธ.02 (Excel)</button>
   <button id="btnPrint">🖨 พิมพ์ / บันทึกเป็น PDF</button>
   <button id="btnExport">💾 บันทึกไฟล์ข้อมูล (.json)</button>
   <label class="filebtn">📂 เปิดไฟล์ข้อมูล<input id="fileImport" type="file" accept="application/json" hidden></label>
@@ -1011,8 +1011,41 @@
     return list.filter(function(s){ return !s.id || s.id.length===best; });
   }
 
+  // ตารางที่มีหัวคอลัมน์ชัดเจน (เช่น ไฟล์ Excel จาก ศธ.02 / RMS: รหัสนักเรียน + ชื่อ-สกุล + กลุ่มเรียน)
+  function parseRosterGrid(raw){
+    var rows=raw.replace(/\r/g,'').split('\n')
+      .filter(function(l){ return l.indexOf('\t')>=0; })
+      .map(function(l){ return l.split('\t').map(function(c){ return String(c==null?'':c).trim(); }); });
+    if(rows.length<3) return [];
+    var hi=-1;
+    for(var i=0;i<Math.min(rows.length,10);i++){
+      var b=bareThai(rows[i].join(' '));
+      if(b.indexOf('รหส')>=0 && b.indexOf('ชอ')>=0){ hi=i; break; }
+    }
+    if(hi<0) return [];
+    var head=rows[hi], idCol=-1, nameCol=-1;
+    head.forEach(function(c,idx){
+      var hb=bareThai(c);
+      if(idCol<0 && hb.indexOf('รหส')>=0 && hb.indexOf('วชา')<0) idCol=idx;
+      if(nameCol<0 && (hb.indexOf('ชอสกล')>=0 || hb.indexOf('ชอนามสกล')>=0 || hb.indexOf('ชอ')>=0)) nameCol=idx;
+    });
+    if(idCol<0 || nameCol<0) return [];
+    var out=[];
+    rows.slice(hi+1).forEach(function(r){
+      var id=String(r[idCol]||'').replace(/\D/g,'');
+      var name=String(r[nameCol]||'').replace(/\s+/g,' ').trim().replace(/^[.,)\]:-]+\s*/,'');
+      if(/^\d{6,13}$/.test(id) && /[ก-๙]/.test(name) && name.length>=2 && !isRosterJunk(name)){
+        out.push({id:id,name:name});
+      }
+    });
+    return out;
+  }
+
   // ดึงคู่ (รหัส 6-13 หลัก + ชื่อ)
   function parseRoster(raw){
+    var grid=parseRosterGrid(raw);
+    if(grid.length>=2) return idConsensus(grid);
+
     var allLines=raw.replace(/\r/g,'').split('\n');
     var sc=rosterScope(allLines);
 
@@ -1051,19 +1084,26 @@
   }
 
   function linesToStudents(text){
+    // ตารางที่มีหัวคอลัมน์ (Excel/ศธ.02) — ใช้ตัวแยกแบบตาราง
+    var g=parseRosterGrid(text);
+    if(g.length>=2) return idConsensus(g);
+
     var res=[];
     text.split('\n').forEach(function(line){
       line=line.trim(); if(!line) return;
       if(isRosterJunk(line)) return;   // ข้ามบรรทัดส่วนหัว (กลุ่มเรียน/ครูผู้สอน ฯลฯ)
-      var idm=line.match(/(\d{6,13})/);
-      var id='', name=line;
-      if(idm){
-        id=idm[1];
-        name=(line.slice(0,idm.index)+' '+line.slice(idm.index+idm[1].length));
+      var id='', name='';
+      if(line.indexOf('\t')>=0){
+        // แถวตาราง: รหัส = ช่องตัวเลข 6-13 หลัก, ชื่อ = ช่องแรกที่เป็นภาษาไทย
+        var cells=line.split('\t').map(function(c){return c.trim();});
+        cells.forEach(function(c){ if(!id && /^\d{6,13}$/.test(c)) id=c; });
+        cells.forEach(function(c){ if(!name && /[ก-๙]/.test(c) && !/^\d/.test(c) && c.indexOf(':')<0) name=c.replace(/\s+/g,' ').trim(); });
+      }else{
+        var idm=line.match(/(\d{6,13})/);
+        name=line;
+        if(idm){ id=idm[1]; name=(line.slice(0,idm.index)+' '+line.slice(idm.index+idm[1].length)); }
+        name=name.replace(/\s+/g,' ').trim().replace(/^\d{1,3}\s*[.,)\]:-]*\s*/,'').replace(/^[\s,;|]+|[\s,;|]+$/g,'').trim();
       }
-      name=name.replace(/\s+/g,' ').trim();
-      // ตัดเลขลำดับ/เครื่องหมายนำหน้า (เช่น "1 ", "2, ", "3) ")
-      name=name.replace(/^\d{1,3}\s*[.,)\]:-]*\s*/,'').replace(/^[\s,;|]+|[\s,;|]+$/g,'').trim();
       if(name || id) res.push({id:id,name:name});
     });
     // ถ้าเกินครึ่งมีรหัส -> ตัดบรรทัดที่ไม่มีรหัสทิ้ง (มักเป็นเศษหัวกระดาษ)
@@ -1101,29 +1141,44 @@
     });
   }
 
+  function rosterFromText(text, fname){
+    var list=parseRoster(text);
+    flash('พร้อมใช้งาน');
+    if(!list.length){
+      openRoster(text.trim(),
+        'ไม่พบรูปแบบ "รหัส + ชื่อ" อัตโนมัติ — อาจเป็นไฟล์สแกน (ไม่มีข้อความ) หรือรูปแบบต่างไป\nแก้ไขข้อความให้เป็น 1 คนต่อบรรทัด (รหัส เว้นวรรค ชื่อ) แล้วกดยืนยัน');
+    }else{
+      openRoster(toLines(list), 'พบ '+list.length+' รายชื่อจากไฟล์ "'+fname+'" — ตรวจสอบ/แก้ไขก่อนยืนยัน');
+    }
+  }
+
   document.getElementById('fileRoster').addEventListener('change',function(e){
     var f=e.target.files[0]; e.target.value=''; if(!f) return;
+    var fr=new FileReader();
+
+    if(/\.(xlsx|xls)$/i.test(f.name) && typeof XLSX!=='undefined'){
+      flash('กำลังอ่านไฟล์ Excel …');
+      readSheetToText(f,function(txt,err){
+        if(err){ flash('พร้อมใช้งาน'); alert(err); return; }
+        rosterFromText(txt, f.name);
+      });
+      return;
+    }
+    if(/\.csv$/i.test(f.name)){
+      fr.onload=function(){ rosterFromText(fr.result.replace(/,/g,'\t'), f.name); };
+      fr.readAsText(f);
+      return;
+    }
+    // PDF
     if(typeof pdfjsLib==='undefined'){
       alert('ยังโหลดตัวอ่าน PDF ไม่สำเร็จ (ต้องเชื่อมต่ออินเทอร์เน็ตอย่างน้อยครั้งแรก)\nหรือพิมพ์/วางรายชื่อเองในหน้าต่างที่จะเปิดขึ้น');
       openRoster('', 'พิมพ์หรือวางรายชื่อเอง (ระบบอ่าน PDF ไม่พร้อม)');
       return;
     }
     flash('กำลังอ่าน PDF …');
-    var fr=new FileReader();
     fr.onload=function(){
-      pdfExtractText(fr.result).then(function(text){
-        var list=parseRoster(text);
-        flash('พร้อมใช้งาน');
-        if(!list.length){
-          openRoster(text.trim(),
-            'ไม่พบรูปแบบ "รหัส + ชื่อ" อัตโนมัติ — อาจเป็นไฟล์สแกน (ไม่มีข้อความ) หรือรูปแบบต่างไป\nแก้ไขข้อความให้เป็น 1 คนต่อบรรทัด (รหัส เว้นวรรค ชื่อ) แล้วกดยืนยัน');
-        }else{
-          openRoster(toLines(list), 'พบ '+list.length+' รายชื่อจากไฟล์ "'+f.name+'" — ตรวจสอบ/แก้ไขก่อนยืนยัน');
-        }
-      }).catch(function(err){
-        flash('พร้อมใช้งาน');
-        alert('อ่าน PDF ไม่สำเร็จ: '+err.message);
-      });
+      pdfExtractText(fr.result).then(function(text){ rosterFromText(text, f.name); })
+        .catch(function(err){ flash('พร้อมใช้งาน'); alert('อ่าน PDF ไม่สำเร็จ: '+err.message); });
     };
     fr.readAsArrayBuffer(f);
   });

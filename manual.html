@@ -151,6 +151,9 @@
     border-left:1px solid var(--line);
   }
   nav.toc li{counter-increment:toc;}
+  nav.toc li.nonum,.toc-mobile li.nonum{counter-increment:none;}
+  nav.toc li.nonum a::before{content:"·";}
+  .toc-mobile li.nonum a::before{content:"·  ";}
   nav.toc a{
     display:grid;
     grid-template-columns:26px 1fr;
@@ -331,6 +334,15 @@
   .state b{display:block;font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;font-weight:600;font-size:15px;}
   .state span{font-size:13.5px;color:var(--muted);}
 
+  /* ---------- ศธ.02 flow ---------- */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:8px 0 18px;}
+  .fstep{flex:1 1 180px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px 14px;box-shadow:var(--shadow);}
+  .fstep .fn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-ink);display:block;}
+  .fstep b{display:block;font-family:"IBM Plex Sans Thai","Sarabun",sans-serif;font-weight:600;font-size:15px;margin:2px 0 3px;}
+  .fstep span:not(.fn){font-size:13px;color:var(--muted);display:block;}
+  .farrow{align-self:center;color:var(--accent-ink);font-size:20px;}
+  @media (max-width:640px){ .farrow{transform:rotate(90deg);} }
+
   /* ---------- footer ---------- */
   footer{
     grid-column:1 / -1;
@@ -397,15 +409,16 @@
   <details class="toc-mobile">
     <summary>สารบัญ</summary>
     <ol>
+      <li class="nonum"><a href="#s0">ภาพรวม · การทำงานกับ ศธ.02</a></li>
       <li><a href="#s1">เริ่มต้นใช้งาน</a></li>
       <li><a href="#s2">กรอกส่วนหัวเอกสาร</a></li>
       <li><a href="#s3">ตารางความก้าวหน้า</a></li>
       <li><a href="#s4">คอลัมน์จิตพิสัย และคะแนนรวม</a></li>
       <li><a href="#s5">รายการมอบหมายงาน</a></li>
       <li><a href="#s6">จัดการรายชื่อนักเรียน</a></li>
-      <li><a href="#s7">นำเข้ารายชื่อจาก PDF</a></li>
+      <li><a href="#s7">นำเข้ารายชื่อจาก ศธ.02</a></li>
       <li><a href="#s8">นำเข้าคะแนนจาก Excel</a></li>
-      <li><a href="#s9">นำเข้าคะแนนจิตพิสัยจาก PDF</a></li>
+      <li><a href="#s9">นำเข้าจิตพิสัยจาก ศธ.02</a></li>
       <li><a href="#s10">บันทึกและเปิดไฟล์ข้อมูล</a></li>
       <li><a href="#s11">พิมพ์ / บันทึกเป็น PDF</a></li>
       <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
@@ -416,15 +429,16 @@
   <nav class="toc" aria-label="สารบัญ">
     <p class="toc-title">สารบัญ</p>
     <ol>
+      <li class="nonum"><a href="#s0">ภาพรวม · การทำงานกับ ศธ.02</a></li>
       <li><a href="#s1">เริ่มต้นใช้งาน</a></li>
       <li><a href="#s2">กรอกส่วนหัวเอกสาร</a></li>
       <li><a href="#s3">ตารางความก้าวหน้า</a></li>
       <li><a href="#s4">จิตพิสัย และคะแนนรวม</a></li>
       <li><a href="#s5">รายการมอบหมายงาน</a></li>
       <li><a href="#s6">จัดการรายชื่อนักเรียน</a></li>
-      <li><a href="#s7">นำเข้ารายชื่อจาก PDF</a></li>
+      <li><a href="#s7">นำเข้ารายชื่อจาก ศธ.02</a></li>
       <li><a href="#s8">นำเข้าคะแนนจาก Excel</a></li>
-      <li><a href="#s9">นำเข้าจิตพิสัยจาก PDF</a></li>
+      <li><a href="#s9">นำเข้าจิตพิสัยจาก ศธ.02</a></li>
       <li><a href="#s10">บันทึกและเปิดไฟล์ข้อมูล</a></li>
       <li><a href="#s11">พิมพ์ / บันทึกเป็น PDF</a></li>
       <li><a href="#s12">ปัญหาที่พบบ่อย</a></li>
@@ -433,6 +447,25 @@
   </nav>
 
   <article>
+
+    <section id="s0">
+      <span class="eyebrow">ภาพรวม</span>
+      <h2>การทำงานร่วมกับ ศธ.02 — ไม่ต้องป้อนเกรดซ้ำ</h2>
+      <p>โปรแกรมนี้ต่อวงจรกับระบบ <strong>ศธ.02 (RMS)</strong> ได้ครบ ตั้งแต่ดึงรายชื่อจนถึงส่งเกรดกลับ</p>
+      <div class="flow">
+        <div class="fstep"><span class="fn">1</span><b>นำเข้ารายชื่อ</b><span>จากไฟล์รายชื่อ ศธ.02 (PDF หรือ Excel)</span></div>
+        <div class="farrow">→</div>
+        <div class="fstep"><span class="fn">2</span><b>นำเข้าจิตพิสัย</b><span>จากแบบสรุปจิตพิสัย ศธ.02 (PDF หรือ Excel)</span></div>
+        <div class="farrow">→</div>
+        <div class="fstep"><span class="fn">3</span><b>บันทึกความก้าวหน้า</b><span>กรอกงาน/คะแนนรายสัปดาห์ตลอดภาคเรียน</span></div>
+        <div class="farrow">→</div>
+        <div class="fstep"><span class="fn">4</span><b>ส่งออก → ศธ.02</b><span>ได้ไฟล์ Excel แบบฟอร์ม Grade Form อัปโหลดกลับ ศธ.02 ได้เลย</span></div>
+      </div>
+      <div class="callout tip">
+        <span class="ci">ผลลัพธ์</span>
+        <p>ครูกรอกที่โปรแกรมนี้ที่เดียวตลอดเทอม แล้วส่งออกเป็นไฟล์ที่ ศธ.02 นำเข้าได้ทันที — ช่อง <strong>ภาระงาน/คะแนนเก็บ(50)</strong> และ <strong>จิตพิสัย(20)</strong> เติมให้อัตโนมัติ เหลือเพียงกรอกคะแนน <strong>ปลายภาค(30)</strong> เพิ่มในไฟล์</p>
+      </div>
+    </section>
 
     <section id="s1">
       <span class="eyebrow">ขั้นที่ 01</span>
@@ -451,13 +484,13 @@
           <tbody>
             <tr><td><span class="k">+ เพิ่มนักเรียน</span></td><td>เพิ่มแถวนักเรียน 1 แถวต่อท้าย</td></tr>
             <tr><td><span class="k">+ แถวว่าง</span></td><td>เพิ่มแถวเปล่าสำหรับเขียนด้วยมือหลังพิมพ์</td></tr>
-            <tr><td><span class="k">📋 นำเข้ารายชื่อจาก PDF</span></td><td>ดึงรายชื่อนักเรียนจากไฟล์ PDF ใบรายชื่อ</td></tr>
+            <tr><td><span class="k">📋 นำเข้ารายชื่อ (ศธ.02 / PDF / Excel)</span></td><td>ดึงรายชื่อนักเรียนจากไฟล์รายชื่อ ศธ.02 (PDF หรือ Excel)</td></tr>
             <tr><td><span class="k">⌨ วาง/พิมพ์รายชื่อ</span></td><td>วางรายชื่อจาก Excel/Word หรือพิมพ์เอง</td></tr>
             <tr><td><span class="k">📊 นำเข้าคะแนนจาก Excel</span></td><td>ดึงคะแนนรายสัปดาห์จากไฟล์ .xlsx / .csv</td></tr>
             <tr><td><span class="k">⌨ วางคะแนน</span></td><td>วางตารางคะแนนจาก Excel โดยตรง</td></tr>
-            <tr><td><span class="k">🙂 นำเข้าจิตพิสัย (PDF/Excel)</span></td><td>ดึงคะแนนจิตพิสัยจากแบบสรุปผลการประเมิน</td></tr>
+            <tr><td><span class="k">🙂 นำเข้าจิตพิสัย (ศธ.02 / PDF / Excel)</span></td><td>ดึงคะแนนจิตพิสัยจากแบบสรุปจิตพิสัย ศธ.02</td></tr>
             <tr><td><span class="k">⌨ วางจิตพิสัย</span></td><td>วางรายการคะแนนจิตพิสัยเอง</td></tr>
-            <tr><td><span class="k">📤 ส่งออกคะแนน (Excel)</span></td><td>สร้างไฟล์ .xlsx แบบฟอร์มส่งงานวัดผล (Grade Form)</td></tr>
+            <tr><td><span class="k">📤 ส่งออกคะแนน → ศธ.02 (Excel)</span></td><td>สร้างไฟล์ .xlsx แบบฟอร์ม Grade Form สำหรับอัปโหลดกลับ ศธ.02</td></tr>
             <tr><td><span class="k">🖨 พิมพ์ / บันทึกเป็น PDF</span></td><td>เปิดหน้าต่างพิมพ์ของเบราว์เซอร์</td></tr>
             <tr><td><span class="k">💾 บันทึกไฟล์ข้อมูล (.json)</span></td><td>ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์สำรอง</td></tr>
             <tr><td><span class="k">📂 เปิดไฟล์ข้อมูล</span></td><td>โหลดไฟล์ .json กลับเข้าโปรแกรม</td></tr>
@@ -614,8 +647,8 @@
 
     <section id="s7">
       <span class="eyebrow">ขั้นที่ 07</span>
-      <h2>นำเข้ารายชื่อจาก PDF</h2>
-      <p>กด <span class="k">📋 นำเข้ารายชื่อจาก PDF</span> แล้วเลือกไฟล์ใบรายชื่อ โปรแกรมจะดึงคู่ <strong>รหัสประจำตัว + ชื่อ-สกุล</strong> ออกมา แล้วเปิดหน้าต่างให้ตรวจก่อนยืนยัน</p>
+      <h2>นำเข้ารายชื่อจาก ศธ.02 (PDF / Excel)</h2>
+      <p>กด <span class="k">📋 นำเข้ารายชื่อ (ศธ.02 / PDF / Excel)</span> แล้วเลือกไฟล์รายชื่อที่ออกจาก ศธ.02 — รองรับทั้ง <strong>PDF ใบรายชื่อ</strong> และ <strong>ไฟล์ Excel</strong> (<code>.xlsx</code> / <code>.csv</code> ที่มีคอลัมน์ รหัสนักเรียน · ชื่อ-สกุล · กลุ่มเรียน) โปรแกรมจะดึงคู่ <strong>รหัสประจำตัว + ชื่อ-สกุล</strong> ออกมา แล้วเปิดหน้าต่างให้ตรวจก่อนยืนยัน</p>
 
       <h3>สิ่งที่โปรแกรมจัดการให้</h3>
       <ul>
@@ -668,8 +701,8 @@
 
     <section id="s9">
       <span class="eyebrow">ขั้นที่ 09</span>
-      <h2>นำเข้าคะแนนจิตพิสัยจาก PDF</h2>
-      <p>กด <span class="k">🙂 นำเข้าจิตพิสัย (PDF/Excel)</span> แล้วเลือก <strong>แบบสรุปผลการประเมินด้านคุณธรรม จริยธรรม ค่านิยมและคุณลักษณะอันพึงประสงค์ (จิตพิสัย)</strong> หรือกด <span class="k">⌨ วางจิตพิสัย</span> เพื่อวางเอง</p>
+      <h2>นำเข้าคะแนนจิตพิสัยจาก ศธ.02</h2>
+      <p>กด <span class="k">🙂 นำเข้าจิตพิสัย (ศธ.02 / PDF / Excel)</span> แล้วเลือก <strong>แบบสรุปผลการประเมินด้านคุณธรรม จริยธรรม ค่านิยมและคุณลักษณะอันพึงประสงค์ (จิตพิสัย)</strong> ที่ออกจาก ศธ.02 (PDF หรือ Excel) หรือกด <span class="k">⌨ วางจิตพิสัย</span> เพื่อวางเอง</p>
       <ul>
         <li>โปรแกรมอ่านทุกแถว <code>ลำดับที่ · ชื่อ-สกุล · [คะแนนรายข้อ] · คะแนน · จิตพิสัย</code></li>
         <li>ใช้ <strong>ตัวเลขคอลัมน์สุดท้ายของแต่ละแถว</strong> = ช่อง “จิตพิสัย = คะแนนที่ได้ × 20” เช่น <code>20.0</code></li>
@@ -698,8 +731,8 @@
         <li><span class="k">📂 เปิดไฟล์ข้อมูล</span> — โหลดไฟล์ .json กลับเข้ามา (แทนที่ข้อมูลปัจจุบัน)</li>
         <li>ใช้ไฟล์ .json แยกกันสำหรับ <strong>แต่ละรายวิชา / แต่ละภาคเรียน</strong> แล้วสลับด้วยการเปิดไฟล์</li>
       </ul>
-      <h3>ส่งออกคะแนนเป็น Excel (สำหรับส่งงานวัดผล)</h3>
-      <p><span class="k">📤 ส่งออกคะแนน (Excel)</span> สร้างไฟล์ <code>.xlsx</code> ชีต <strong>“Grade Form”</strong> ตามแบบฟอร์มนำเข้าคะแนนของสถานศึกษา</p>
+      <h3>ส่งออกคะแนน → ศธ.02 (Excel)</h3>
+      <p><span class="k">📤 ส่งออกคะแนน → ศธ.02 (Excel)</span> สร้างไฟล์ <code>.xlsx</code> ชีต <strong>“Grade Form”</strong> โครงสร้างตรงกับแบบฟอร์มนำเข้าคะแนนของ ศธ.02 — <strong>อัปโหลดกลับเข้า ศธ.02 ได้เลยโดยไม่ต้องพิมพ์เกรดทีละคน</strong></p>
       <div class="tbl-scroll">
         <table>
           <thead><tr><th>คอลัมน์ในไฟล์</th><th>มาจาก</th></tr></thead>
