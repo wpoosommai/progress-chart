@@ -35,6 +35,11 @@
   .toolbar .hint{font-size:12px;color:#bbb;}
   #saveState{font-size:12px;color:#8f8;}
   .toolbar .privline{flex-basis:100%;font-size:11px;color:#7fb37f;padding-top:2px;}
+  .toolbar .menubtn{background:#2f2f2f;color:#fff;border:1px solid #6a6a6a;padding:7px 15px;
+    border-radius:6px;cursor:pointer;font-size:14px;font-family:inherit;font-weight:600;}
+  .toolbar .menubtn:hover{background:var(--accent);border-color:var(--accent);}
+  #cmdStash{display:none;}
+  .ctxmenu{min-width:250px;}
   /* ปิดบังชื่อ-รหัสตอนฉายจอ */
   body.masked .id-in, body.masked .name-in{ -webkit-text-security:disc; }
   /* ล็อกหน้าจอ */
@@ -224,28 +229,37 @@
 </div>
 
 <div class="toolbar">
-  <button id="btnAddStudent">+ เพิ่มนักเรียน</button>
-  <button id="btnAddBlank">+ แถวว่าง</button>
-  <label class="filebtn">📋 นำเข้ารายชื่อ (ศธ.02 / PDF / Excel)<input id="fileRoster" type="file" accept=".pdf,.xlsx,.xls,.csv,application/pdf" hidden></label>
-  <button id="btnPasteRoster">⌨ วาง/พิมพ์รายชื่อ</button>
-  <label class="filebtn">📊 นำเข้าคะแนนจาก Excel<input id="fileScore" type="file" accept=".xlsx,.xls,.csv" hidden></label>
-  <button id="btnPasteScore">⌨ วางคะแนน</button>
-  <label class="filebtn">🙂 นำเข้าจิตพิสัย (ศธ.02 / PDF / Excel)<input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden></label>
-  <button id="btnPasteBeh">⌨ วางจิตพิสัย</button>
-  <button id="btnExportScore">📤 ส่งออกคะแนน → ศธ.02 (Excel)</button>
-  <button id="btnPrint">🖨 พิมพ์ / บันทึกเป็น PDF</button>
-  <button id="btnExport">💾 บันทึกไฟล์ข้อมูล (.json)</button>
-  <label class="filebtn">📂 เปิดไฟล์ข้อมูล<input id="fileImport" type="file" accept="application/json" hidden></label>
-  <button id="btnDemo">🧪 ข้อมูลตัวอย่าง (20 คน)</button>
-  <button id="btnReset">♻ เริ่มใหม่</button>
-  <button id="btnWipe" title="ลบข้อมูลทั้งหมดออกจากเบราว์เซอร์เครื่องนี้อย่างถาวร">🧹 ลบข้อมูลออกจากเครื่อง</button>
-  <button id="btnMask" title="ปิดบังชื่อ-รหัสนักเรียนบนจอ (สำหรับฉายจอ/แชร์หน้าจอ)">👁 ซ่อนชื่อ</button>
-  <button id="btnLock" title="ล็อกหน้าจอทันที (Ctrl+L)">🔒 ล็อก</button>
-  <button id="btnPin" title="ตั้ง/เปลี่ยน/ลบ PIN ล็อกหน้าจอ">🔑 PIN</button>
+  <button class="menubtn" data-menu="file">📂 ไฟล์ ▾</button>
+  <button class="menubtn" data-menu="roster">👥 รายชื่อ ▾</button>
+  <button class="menubtn" data-menu="score">📝 คะแนน ▾</button>
+  <button class="menubtn" data-menu="exp">📤 ส่งออก · พิมพ์ ▾</button>
+  <button class="menubtn" data-menu="sec">🔒 ความปลอดภัย ▾</button>
   <a class="helpbtn" href="manual.html" target="_blank" rel="noopener">📘 คู่มือ</a>
   <span class="spacer"></span>
   <span id="saveState">พร้อมใช้งาน</span>
-  <span class="privline">🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วย 💾 บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง 🔑 PIN เพื่อล็อกหน้าจออัตโนมัติ</span>
+  <span class="privline">🛡 ข้อมูลนักเรียนทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งออกไปที่ใด • สำรองด้วยเมนู ไฟล์ → บันทึกไฟล์ข้อมูล เป็นระยะ • ตั้ง PIN ในเมนู ความปลอดภัย</span>
+</div>
+
+<div id="cmdStash" hidden aria-hidden="true">
+  <button id="btnAddStudent">+ เพิ่มนักเรียน</button>
+  <button id="btnAddBlank">+ แถวว่าง</button>
+  <button id="btnPasteRoster">วางรายชื่อ</button>
+  <button id="btnPasteScore">วางคะแนน</button>
+  <button id="btnPasteBeh">วางจิตพิสัย</button>
+  <button id="btnExportScore">ส่งออกคะแนน</button>
+  <button id="btnPrint">พิมพ์</button>
+  <button id="btnExport">บันทึกไฟล์ข้อมูล</button>
+  <button id="btnDemo">ข้อมูลตัวอย่าง</button>
+  <button id="btnReset">เริ่มใหม่</button>
+  <button id="btnWipe">ลบข้อมูลออกจากเครื่อง</button>
+  <button id="btnMask">ซ่อนชื่อ</button>
+  <button id="btnLock">ล็อก</button>
+  <button id="btnPin">PIN</button>
+  <input id="fileRoster" type="file" accept=".pdf,.xlsx,.xls,.csv,application/pdf" hidden>
+  <input id="fileScore" type="file" accept=".xlsx,.xls,.csv" hidden>
+  <input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden>
+  <input id="fileImport" type="file" accept="application/json" hidden>
+</div>
   <span class="hint">คลิกช่อง = สลับสถานะ (ว่าง → เส้นทแยง → ระบายสามเหลี่ยมบน) • พิมพ์ตัวเลขมุมล่างขวา = คะแนน • คลิกขวา = เมนู (ล้างช่อง / แก้คะแนนเต็ม / ตั้งทั้งคอลัมน์ / ลบนักเรียน / วันหยุด …)<br>คลิกเลขหัวสัปดาห์ (1–18) = ตั้งทั้งคอลัมน์ให้ทุกคน (ครั้งที่ 1 มอบหมายงาน / ครั้งที่ 2 ส่งงาน + ใส่คะแนนเต็ม / ครั้งที่ 3 ล้าง)</span>
 </div>
 
@@ -538,6 +552,61 @@
       document.addEventListener(ev, resetIdle, {passive:true});
     });
     if(pinRecord()) lockNow(); else resetIdle();
+  }
+
+  /* ---------- เมนูแบบ Drop-down บนแถบเครื่องมือ ---------- */
+  function tbMenu(name){
+    var g=function(id){ return document.getElementById(id); };
+    var pin=(typeof pinRecord==="function" && pinRecord());
+    var masked=document.body.classList.contains("masked");
+    var M={
+      file:[
+        {label:"📂 เปิดไฟล์ข้อมูล (.json)…", fn:function(){ g("fileImport").click(); }},
+        {label:"💾 บันทึกไฟล์ข้อมูล (.json)", fn:function(){ g("btnExport").click(); }},
+        "-",
+        {label:"🧪 โหลดข้อมูลตัวอย่าง (20 คน)", fn:function(){ g("btnDemo").click(); }},
+        {label:"♻ เริ่มใหม่ (ตารางว่าง)", fn:function(){ g("btnReset").click(); }},
+        {label:"🧹 ลบข้อมูลออกจากเครื่องนี้", danger:true, fn:function(){ g("btnWipe").click(); }}
+      ],
+      roster:[
+        {head:"นำเข้ารายชื่อ"},
+        {label:"📋 จากไฟล์ ศธ.02 / PDF / Excel…", fn:function(){ g("fileRoster").click(); }},
+        {label:"⌨ วาง / พิมพ์รายชื่อ", fn:function(){ g("btnPasteRoster").click(); }},
+        "-",
+        {head:"จัดการแถว"},
+        {label:"+ เพิ่มนักเรียน", fn:function(){ g("btnAddStudent").click(); }},
+        {label:"+ แถวว่าง", fn:function(){ g("btnAddBlank").click(); }},
+        {label:"− ลบแถวสุดท้าย", fn:function(){ var d=g("btnDelLast"); if(d) d.click(); }}
+      ],
+      score:[
+        {head:"คะแนนรายสัปดาห์"},
+        {label:"📊 นำเข้าจาก Excel…", fn:function(){ g("fileScore").click(); }},
+        {label:"⌨ วางคะแนน (จาก Excel)", fn:function(){ g("btnPasteScore").click(); }},
+        "-",
+        {head:"จิตพิสัย"},
+        {label:"🙂 นำเข้าจาก ศธ.02 / PDF / Excel…", fn:function(){ g("fileBeh").click(); }},
+        {label:"⌨ วางจิตพิสัย", fn:function(){ g("btnPasteBeh").click(); }}
+      ],
+      exp:[
+        {label:"📤 ส่งออกคะแนน → ศธ.02 (Excel)", fn:function(){ g("btnExportScore").click(); }},
+        {label:"🖨 พิมพ์ / บันทึกเป็น PDF", fn:function(){ g("btnPrint").click(); }}
+      ],
+      sec:[
+        {label:"🔒 ล็อกหน้าจอ (Ctrl+L)", fn:function(){ g("btnLock").click(); }},
+        {label:(masked?"👁 แสดงชื่อ-รหัส":"👁 ซ่อนชื่อ-รหัส (ตอนฉายจอ)"), fn:function(){ g("btnMask").click(); }},
+        {label:(pin?"🔑 เปลี่ยน / ลบ PIN":"🔑 ตั้ง PIN ล็อกหน้าจอ"), fn:function(){ g("btnPin").click(); }}
+      ]
+    };
+    return M[name]||[];
+  }
+  function initToolbarMenus(){
+    document.querySelectorAll(".toolbar .menubtn").forEach(function(b){
+      b.addEventListener("click",function(e){
+        e.stopPropagation();
+        var r=b.getBoundingClientRect();
+        openMenu(r.left, r.bottom+4, tbMenu(b.getAttribute("data-menu")));
+      });
+    });
   }
 
   /* ---------- render ---------- */
@@ -1653,6 +1722,7 @@
   renderHeadValues();
   render();
   try{ initSecurity(); }catch(e){ console.warn("security init:",e); }
+  try{ initToolbarMenus(); }catch(e){ console.warn("toolbar menus:",e); }
 })();
 </script>
 </body>
