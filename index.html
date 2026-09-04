@@ -282,6 +282,7 @@
   <button id="btnExport">บันทึกไฟล์ข้อมูล</button>
   <button id="btnDemo">ข้อมูลตัวอย่าง</button>
   <button id="btnSampleScores">คะแนนสมมุติ 15 สัปดาห์</button>
+  <button id="btnSampleScores18">คะแนนสมมุติ 18 สัปดาห์</button>
   <button id="btnReset">เริ่มใหม่</button>
   <button id="btnWipe">ลบข้อมูลออกจากเครื่อง</button>
   <button id="btnMask">ซ่อนชื่อ</button>
@@ -650,7 +651,8 @@
         {label:"💾 บันทึกไฟล์ข้อมูล (.json)", fn:function(){ g("btnExport").click(); }},
         "-",
         {label:"🧪 โหลดข้อมูลตัวอย่าง (20 คน)", fn:function(){ g("btnDemo").click(); }},
-        {label:"🎲 ใส่คะแนนสมมุติ 15 สัปดาห์ (ตามรายชื่อที่มี)", fn:function(){ g("btnSampleScores").click(); }},
+        {label:"🎲 ใส่คะแนนสมมุติ 15 สัปดาห์ (สอบกลางภาค สป.8 · ปลายภาค สป.15)", fn:function(){ g("btnSampleScores").click(); }},
+        {label:"🎲 ใส่คะแนนสมมุติ 18 สัปดาห์ (สอบกลางภาค สป.9 · ปลายภาค สป.18)", fn:function(){ g("btnSampleScores18").click(); }},
         {label:"♻ เริ่มใหม่ (ตารางว่าง)", fn:function(){ g("btnReset").click(); }},
         {label:"🧹 ลบข้อมูลออกจากเครื่องนี้", danger:true, fn:function(){ g("btnWipe").click(); }}
       ],
@@ -1150,16 +1152,20 @@
   });
   document.getElementById('btnDemo').addEventListener('click',loadDemo);
 
-  // ---- ใส่คะแนนสมมุติ 15 สัปดาห์ ตามรายชื่อที่มี ----
-  document.getElementById('btnSampleScores').addEventListener('click',function(){
+  // ---- ใส่คะแนนสมมุติ ตามรายชื่อที่มี (MID/FIN = index 0-based, LASTWK = จำนวนสัปดาห์ที่ใช้) ----
+  function fillSampleScores(MID, FIN, LASTWK){
     if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน แล้วจึงใส่คะแนนสมมุติ'); return; }
-    if(!confirm('ใส่คะแนนสมมุติ 15 สัปดาห์ ทับคะแนนและจิตพิสัยเดิมของนักเรียนทุกคน?\n\nสอบกลางภาค สป.8 = เต็ม 15  •  สอบปลายภาค สป.15 = เต็ม 30\nจิตพิสัย เต็ม 20  •  คะแนนรวม 100\n(มีคนส่งงานไม่ครบ / ไม่ส่ง / ขาดเรียน ปนแบบสมจริง)')) return;
+    if(!confirm('ใส่คะแนนสมมุติ '+LASTWK+' สัปดาห์ ทับคะแนนและจิตพิสัยเดิมของนักเรียนทุกคน?\n\n'
+      +'สอบกลางภาค สป.'+(MID+1)+' = เต็ม 15  •  สอบปลายภาค สป.'+(FIN+1)+' = เต็ม 30\n'
+      +'จิตพิสัย เต็ม 20  •  คะแนนรวม 100\n(มีคนส่งงานไม่ครบ / ไม่ส่ง / ขาดเรียน ปนแบบสมจริง)')) return;
 
-    var MID=7, FIN=14, LASTWK=15;                 // 0-based: สป.8 = 7, สป.15 = 14
-    var ordinary=[0,1,2,3,4,5,6,8,9,10,11,12,13]; // 13 สัปดาห์ปกติ
+    var ordinary=[];
+    for(var i=0;i<LASTWK;i++){ if(i!==MID && i!==FIN) ordinary.push(i); }
+    var N=ordinary.length;
+    var threes=Math.max(0, Math.min(N, 35 - 2*N));   // a×3 + b×2 = 35, a+b = N
     var fullW=new Array(WEEKS).fill('');
-    ordinary.forEach(function(w,i){ fullW[w]= (i<9 ? 3 : 2); });  // 9×3 + 4×2 = 35
-    fullW[MID]=15; fullW[FIN]=30;                 // 35 + 15 + 30 + จิตพิสัย 20 = 100
+    ordinary.forEach(function(w,ix){ fullW[w]= (ix<threes ? 3 : 2); });
+    fullW[MID]=15; fullW[FIN]=30;                     // Σ(ordinary) + 15 + 30 + จิตพิสัย 20 = 100
 
     for(var w=0; w<WEEKS; w++){
       var a=state.assignments[w] || (state.assignments[w]={label:'สป.'+(w+1),text:'',score:''});
@@ -1198,8 +1204,10 @@
     });
 
     renderAssign(); renderBody(); save();
-    flash('ใส่คะแนนสมมุติ 15 สัปดาห์ ให้ '+state.students.length+' คน แล้ว ✓');
-  });
+    flash('ใส่คะแนนสมมุติ '+LASTWK+' สัปดาห์ ให้ '+state.students.length+' คน แล้ว ✓');
+  }
+  document.getElementById('btnSampleScores').addEventListener('click',function(){ fillSampleScores(7, 14, 15); });    // สอบกลางภาค สป.8 · ปลายภาค สป.15
+  document.getElementById('btnSampleScores18').addEventListener('click',function(){ fillSampleScores(8, 17, 18); });  // สอบกลางภาค สป.9 · ปลายภาค สป.18
 
   document.getElementById('btnReset').addEventListener('click',function(){
     if(!confirm('เริ่มใหม่ทั้งหมด? ข้อมูลปัจจุบันจะถูกลบ')) return;
