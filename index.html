@@ -277,6 +277,7 @@
   <button id="btnPasteRoster">วางรายชื่อ</button>
   <button id="btnPasteScore">วางคะแนน</button>
   <button id="btnPasteBeh">วางจิตพิสัย</button>
+  <button id="btnPasteGrade">นำเข้าเกรด</button>
   <button id="btnExportScore">ส่งออกคะแนน</button>
   <button id="btnPrint">พิมพ์</button>
   <button id="btnExport">บันทึกไฟล์ข้อมูล</button>
@@ -291,6 +292,7 @@
   <input id="fileRoster" type="file" accept=".pdf,.xlsx,.xls,.csv,application/pdf" hidden>
   <input id="fileScore" type="file" accept=".xlsx,.xls,.csv" hidden>
   <input id="fileBeh" type="file" accept=".pdf,.xlsx,.xls,.csv" hidden>
+  <input id="fileGrade" type="file" accept=".xlsx,.xls,.csv" hidden>
   <input id="fileImport" type="file" accept="application/json" hidden>
 </div>
 
@@ -354,6 +356,30 @@
     <div class="act">
       <button id="behCancel">ยกเลิก</button>
       <button id="behConfirm" class="primary">ยืนยันนำเข้า</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="gradeModal">
+  <div class="box">
+    <h3>นำเข้าเกรด → กระจายคะแนน</h3>
+    <p class="sub" id="gradeInfo"></p>
+    <textarea id="gradeText" spellcheck="false" placeholder="แต่ละบรรทัด: รหัสประจำตัว / ชื่อ-สกุล   แล้วต่อท้ายด้วยเกรด&#10;67301050001  นางสาวจันทร์จิรา พิลาดี  3.5&#10;67301050002  นายชนิสร อนันทสุข  2"></textarea>
+    <div class="opts">
+      <label><input type="radio" name="gradeWeeks" value="15" checked> 15 สัปดาห์ (กลางภาค สป.8 · ปลายภาค สป.15)</label>
+      <label><input type="radio" name="gradeWeeks" value="18"> 18 สัปดาห์ (กลางภาค สป.9 · ปลายภาค สป.18)</label>
+    </div>
+    <div class="note-s">
+      <b>รูปแบบ</b> — แต่ละแถว: <b>รหัสประจำตัว</b> และ/หรือ <b>ชื่อ-สกุล</b> แล้วต่อท้ายด้วย <b>เกรด</b> (0 · 1 · 1.5 · 2 · 2.5 · 3 · 3.5 · 4) มีหัวตารางหรือไม่มีก็ได้<br>
+      ระบบกระจายคะแนนรายสัปดาห์ + สอบกลางภาค (เต็ม 15) + สอบปลายภาค (เต็ม 30) ให้ <b>คะแนนรวม</b> อยู่ในช่วงของเกรด:<br>
+      4 = 80 ขึ้นไป · 3.5 = 75–79 · 3 = 70–74 · 2.5 = 65–69 · 2 = 60–64 · 1.5 = 55–59 · 1 = 50–54 · 0 = ต่ำกว่า 50<br>
+      <b>คะแนนจิตพิสัยเดิมไม่ถูกแก้ไข</b> (นับรวมในคะแนนรวม) • บางสัปดาห์จะไม่ส่งงาน/ขาดเรียนแบบสมจริง
+      <div style="margin-top:6px;"><button type="button" id="gradeSample">📥 ดาวน์โหลดไฟล์ตัวอย่างเกรด (.xlsx)</button></div>
+    </div>
+    <div class="act">
+      <button id="gradeCancel">ยกเลิก</button>
+      <button type="button" id="gradePick">📊 เลือกไฟล์ Excel…</button>
+      <button id="gradeConfirm" class="primary">ยืนยัน กระจายคะแนน</button>
     </div>
   </div>
 </div>
@@ -674,7 +700,10 @@
         "-",
         {head:"จิตพิสัย"},
         {label:"🙂 นำเข้าจาก ศธ.02 / PDF / Excel…", fn:function(){ g("fileBeh").click(); }},
-        {label:"⌨ วางจิตพิสัย", fn:function(){ g("btnPasteBeh").click(); }}
+        {label:"⌨ วางจิตพิสัย", fn:function(){ g("btnPasteBeh").click(); }},
+        "-",
+        {head:"เกรด"},
+        {label:"🎯 นำเข้าเกรด → กระจายคะแนน…", fn:function(){ g("btnPasteGrade").click(); }}
       ],
       exp:[
         {label:"📤 ส่งออกคะแนน → ศธ.02 (Excel)", fn:function(){ g("btnExportScore").click(); }},
@@ -1153,20 +1182,15 @@
   document.getElementById('btnDemo').addEventListener('click',loadDemo);
 
   // ---- ใส่คะแนนสมมุติ ตามรายชื่อที่มี (MID/FIN = index 0-based, LASTWK = จำนวนสัปดาห์ที่ใช้) ----
-  function fillSampleScores(MID, FIN, LASTWK){
-    if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน แล้วจึงใส่คะแนนสมมุติ'); return; }
-    if(!confirm('ใส่คะแนนสมมุติ '+LASTWK+' สัปดาห์ ทับคะแนนและจิตพิสัยเดิมของนักเรียนทุกคน?\n\n'
-      +'สอบกลางภาค สป.'+(MID+1)+' = เต็ม 15  •  สอบปลายภาค สป.'+(FIN+1)+' = เต็ม 30\n'
-      +'จิตพิสัย เต็ม 20  •  คะแนนรวม 100\n(มีคนส่งงานไม่ครบ / ไม่ส่ง / ขาดเรียน ปนแบบสมจริง)')) return;
-
+  // เต็มรายสัปดาห์ + ตั้งข้อความสอบกลางภาค/ปลายภาค → คืน {fullW, ordinary}; Σ(ปกติ)=35, กลางภาค 15, ปลายภาค 30
+  function applyAssignTemplate(MID, FIN, LASTWK){
     var ordinary=[];
     for(var i=0;i<LASTWK;i++){ if(i!==MID && i!==FIN) ordinary.push(i); }
     var N=ordinary.length;
     var threes=Math.max(0, Math.min(N, 35 - 2*N));   // a×3 + b×2 = 35, a+b = N
     var fullW=new Array(WEEKS).fill('');
     ordinary.forEach(function(w,ix){ fullW[w]= (ix<threes ? 3 : 2); });
-    fullW[MID]=15; fullW[FIN]=30;                     // Σ(ordinary) + 15 + 30 + จิตพิสัย 20 = 100
-
+    fullW[MID]=15; fullW[FIN]=30;
     for(var w=0; w<WEEKS; w++){
       var a=state.assignments[w] || (state.assignments[w]={label:'สป.'+(w+1),text:'',score:''});
       if(w<LASTWK){
@@ -1178,7 +1202,16 @@
         a.score=''; if(/^สอบ/.test(a.text)) a.text='';
       }
     }
+    return {fullW:fullW, ordinary:ordinary};
+  }
 
+  function fillSampleScores(MID, FIN, LASTWK){
+    if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน แล้วจึงใส่คะแนนสมมุติ'); return; }
+    if(!confirm('ใส่คะแนนสมมุติ '+LASTWK+' สัปดาห์ ทับคะแนนและจิตพิสัยเดิมของนักเรียนทุกคน?\n\n'
+      +'สอบกลางภาค สป.'+(MID+1)+' = เต็ม 15  •  สอบปลายภาค สป.'+(FIN+1)+' = เต็ม 30\n'
+      +'จิตพิสัย เต็ม 20  •  คะแนนรวม 100\n(มีคนส่งงานไม่ครบ / ไม่ส่ง / ขาดเรียน ปนแบบสมจริง)')) return;
+
+    var tpl=applyAssignTemplate(MID, FIN, LASTWK), fullW=tpl.fullW;
     var ri=function(lo,hi){ if(hi<lo) hi=lo; return lo+Math.floor(Math.random()*(hi-lo+1)); };
     state.students.forEach(function(st,idx){
       st.cells=new Array(WEEKS).fill(0);
@@ -1208,6 +1241,180 @@
   }
   document.getElementById('btnSampleScores').addEventListener('click',function(){ fillSampleScores(7, 14, 15); });    // สอบกลางภาค สป.8 · ปลายภาค สป.15
   document.getElementById('btnSampleScores18').addEventListener('click',function(){ fillSampleScores(8, 17, 18); });  // สอบกลางภาค สป.9 · ปลายภาค สป.18
+
+  /* ---------- นำเข้าเกรด → กระจายคะแนนให้สัมพันธ์กับเกรด ---------- */
+  var GRADE_VALUES=[0,1,1.5,2,2.5,3,3.5,4];
+  var GRADE_BANDS={'4':[80,100],'3.5':[75,79],'3':[70,74],'2.5':[65,69],'2':[60,64],'1.5':[55,59],'1':[50,54],'0':[0,49]};
+  function snapGrade(v){
+    var n=parseFloat(String(v).replace(/,/g,'.')); if(isNaN(n)) return null;
+    var best=null,bd=1e9;
+    GRADE_VALUES.forEach(function(g){ var d=Math.abs(g-n); if(d<bd){bd=d;best=g;} });
+    return bd<=0.26 ? best : null;
+  }
+  var gradeModal=document.getElementById('gradeModal');
+  function openGrade(text,info){
+    document.getElementById('gradeText').value=text||'';
+    document.getElementById('gradeInfo').textContent=info||'';
+    gradeModal.classList.add('open');
+  }
+  function closeGrade(){ gradeModal.classList.remove('open'); }
+  document.getElementById('gradeCancel').addEventListener('click',closeGrade);
+  gradeModal.addEventListener('click',function(e){ if(e.target===gradeModal) closeGrade(); });
+  document.getElementById('gradePick').addEventListener('click',function(){ document.getElementById('fileGrade').click(); });
+
+  function parseGradeGrid(text){
+    var byId={}, byName={};
+    state.students.forEach(function(st){
+      if(st.id) byId[String(st.id).trim()]=st;
+      if(st.name) byName[bareThai(st.name)]=st;
+    });
+    var rows=splitGrid(text), out=[], unmatched=[], seen={};
+    rows.forEach(function(r){
+      if(!r.length || r.length>7) return;
+      var joined=r.join(' ');
+      var id=''; r.forEach(function(c){ c=String(c).trim(); if(!id && /^\d{6,13}$/.test(c)) id=c; });
+      var name=''; r.forEach(function(c){ c=String(c).trim(); if(!name && /[ก-๙]/.test(c) && bareThai(c).length>=2 && !/^\d/.test(c)) name=c; });
+      var grade=null;
+      r.forEach(function(c){ c=String(c).trim(); if(/^[0-4](\.[05])?$/.test(c)){ var g=snapGrade(c); if(g!=null) grade=g; } });
+      if(grade==null){ var gm=joined.match(/(?:เกรด|ผลการเร[ีิ]?ยน|grade)\s*[:：]?\s*([0-4](?:\.[05])?)/i); if(gm) grade=snapGrade(gm[1]); }
+      if(grade==null) return;
+      if(bareThai(joined).indexOf('รหสประจตว')>=0 || /ชื่อ\s*[-–]\s*สก/.test(joined)) return; // ข้ามหัวตาราง
+      var st=(id && byId[id]) || (name && byName[bareThai(name)]) || null;
+      if(st){ var key=st.id||st.name; if(seen[key]) return; seen[key]=1; out.push({st:st, grade:grade, label:(name||id)}); }
+      else if(id||name) unmatched.push((id?id+' ':'')+(name||''));
+    });
+    return {rows:out, unmatched:unmatched};
+  }
+
+  function distributeGrades(MID, FIN, LASTWK){
+    var pv=parseGradeGrid(document.getElementById('gradeText').value);
+    if(!pv.rows.length){ alert('ไม่พบเกรดที่จับคู่กับนักเรียนได้\nตรวจว่าแต่ละแถวมี รหัสประจำตัว/ชื่อ-สกุล และค่าเกรด 0–4'); return; }
+    if(!confirm('กระจายคะแนน '+LASTWK+' สัปดาห์ ให้สัมพันธ์กับเกรดที่นำเข้า ('+pv.rows.length+' คน)?\n\n'
+      +'สอบกลางภาค สป.'+(MID+1)+' เต็ม 15 · สอบปลายภาค สป.'+(FIN+1)+' เต็ม 30\n'
+      +'ทับคะแนนรายสัปดาห์เดิม — แต่ไม่แตะคะแนนจิตพิสัย')) return;
+
+    var tpl=applyAssignTemplate(MID, FIN, LASTWK), fullW=tpl.fullW, ordinary=tpl.ordinary;
+    var CAP=0; for(var w=0; w<LASTWK; w++) CAP+=(+fullW[w]||0);
+    var ri=function(lo,hi){ if(hi<lo) hi=lo; return lo+Math.floor(Math.random()*(hi-lo+1)); };
+    var rand=function(a){ return a[Math.floor(Math.random()*a.length)]; };
+    var num=function(v){ var n=parseFloat(v); return isNaN(n)?0:n; };
+
+    pv.rows.forEach(function(row){
+      var st=row.st, grade=row.grade, band=GRADE_BANDS[String(grade)];
+      var behEff=parseFloat(st.behavior); if(isNaN(behEff)) behEff=0;
+      var T;
+      if(grade===4) T=ri(82,94);
+      else if(grade===0) T=ri(36,47);
+      else T=ri(band[0]+1, band[1]-1);
+      var work=Math.max(0, Math.min(CAP, Math.round(T-behEff)));
+
+      var wk=[]; for(var i=0;i<LASTWK;i++) wk.push(i);
+      var raw=wk.map(function(w){ return work*fullW[w]/CAP; });
+      var sc=raw.map(function(x){ return Math.floor(x); });
+      var rem=work - sc.reduce(function(a,b){return a+b;},0);
+      wk.slice().sort(function(a,b){ return (raw[b]-Math.floor(raw[b]))-(raw[a]-Math.floor(raw[a])); })
+        .forEach(function(w){ if(rem>0 && sc[w]<fullW[w]){ sc[w]++; rem--; } });
+
+      st.cells=new Array(WEEKS).fill(0);
+      st.scores=new Array(WEEKS).fill('');
+      wk.forEach(function(w){ st.scores[w]=String(sc[w]); st.cells[w]=2; });
+
+      // ความสมจริง: บางสัปดาห์ไม่ส่ง/ขาด (เฉพาะสัปดาห์ปกติ) — ข้ามถ้าเป็นเด็กเกือบเต็ม
+      var prof = grade<=1 ? 2 : grade<=2.5 ? 1 : 0;
+      var nP = (work>=CAP-3) ? 0 : (prof===2? ri(2,4) : prof===1? ri(1,2) : ri(0,1));
+      var pool=ordinary.slice();
+      for(var p=0; p<nP && pool.length; p++){
+        var wi=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        var pts=num(st.scores[wi]);
+        st.cells[wi]= Math.random()<0.55 ? 1 : 0;   // มอบหมายแล้วยังไม่ส่ง / ขาดเรียน
+        st.scores[wi]='';
+        var guard=0;
+        while(pts>0 && guard++<100){
+          var recip=ordinary.filter(function(w){ return st.cells[w]===2 && num(st.scores[w])<fullW[w]; });
+          if(!recip.length) break;
+          var w2=rand(recip);
+          st.scores[w2]=String(num(st.scores[w2])+1); pts--;
+        }
+      }
+
+      // ปรับให้คะแนนรวมอยู่ในช่วงเกรดเป๊ะ
+      var total=function(){ var t=behEff; for(var w=0;w<WEEKS;w++){ var v=parseFloat(st.scores[w]); if(!isNaN(v)) t+=v; } return t; };
+      var g2=0;
+      while(total()<band[0] && g2++<400){
+        var up=[FIN,MID].concat(ordinary).filter(function(w){ return st.cells[w]===2 && num(st.scores[w])<fullW[w]; });
+        if(!up.length){ up=ordinary.filter(function(w){ return num(st.scores[w])<fullW[w]; }); up.forEach(function(w){ st.cells[w]=2; }); }
+        if(!up.length) break;
+        var wu=rand(up); st.scores[wu]=String(num(st.scores[wu])+1);
+      }
+      g2=0;
+      while(total()>band[1] && g2++<500){
+        var dn=ordinary.concat([MID,FIN]).filter(function(w){ return num(st.scores[w])>0; });
+        if(!dn.length) break;
+        var wd=rand(dn); st.scores[wd]=String(num(st.scores[wd])-1);
+      }
+    });
+
+    renderAssign(); renderBody(); save(); closeGrade();
+    var msg='กระจายคะแนน '+LASTWK+' สัปดาห์ ตามเกรด ให้ '+pv.rows.length+' คน แล้ว ✓ (จิตพิสัยเดิมไม่แก้ไข)';
+    if(pv.unmatched.length) msg+=' • ไม่พบ '+pv.unmatched.length+' รายการ';
+    flash(msg);
+  }
+
+  function afterGradeText(text, fname){
+    var pv=parseGradeGrid(text);
+    var info=(fname?'ไฟล์ "'+fname+'" — ':'')+'จับคู่นักเรียน + เกรดได้ '+pv.rows.length+' คน';
+    if(pv.unmatched.length) info+=' • ไม่พบ '+pv.unmatched.length+': '+pv.unmatched.slice(0,4).join(', ')+(pv.unmatched.length>4?' …':'');
+    openGrade(text, info);
+  }
+  document.getElementById('btnPasteGrade').addEventListener('click',function(){
+    if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน แล้วจึงนำเข้าเกรด'); return; }
+    openGrade('', 'วางรายการ “รหัส/ชื่อ + เกรด” หรือกด “เลือกไฟล์ Excel…” แล้วเลือกแบบ 15 หรือ 18 สัปดาห์');
+  });
+  document.getElementById('gradeText').addEventListener('paste',function(){
+    var ta=this;
+    setTimeout(function(){
+      var pv=parseGradeGrid(ta.value);
+      var info='จับคู่นักเรียน + เกรดได้ '+pv.rows.length+' คน';
+      if(pv.unmatched.length) info+=' • ไม่พบ '+pv.unmatched.length+': '+pv.unmatched.slice(0,4).join(', ');
+      document.getElementById('gradeInfo').textContent=info;
+    },0);
+  });
+  document.getElementById('gradeConfirm').addEventListener('click',function(){
+    var wkSel=document.querySelector('input[name="gradeWeeks"]:checked');
+    var mode=wkSel? wkSel.value : '15';
+    if(mode==='18') distributeGrades(8, 17, 18);
+    else distributeGrades(7, 14, 15);
+  });
+  document.getElementById('fileGrade').addEventListener('change',function(e){
+    var f=e.target.files[0]; e.target.value=''; if(!f) return;
+    if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน'); return; }
+    if(/\.csv$/i.test(f.name) || typeof XLSX==='undefined'){
+      var fr=new FileReader();
+      fr.onload=function(){ afterGradeText(String(fr.result).replace(/,/g,'\t'), f.name); };
+      fr.readAsText(f);
+    }else{
+      flash('กำลังอ่านไฟล์ Excel …');
+      readSheetToText(f,function(txt,err){ flash('พร้อมใช้งาน'); if(err){ alert(err); return; } afterGradeText(txt, f.name); });
+    }
+  });
+  document.getElementById('gradeSample').addEventListener('click',function(){
+    if(typeof XLSX==='undefined'){ alert('ยังโหลดตัวอ่าน Excel ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ตครั้งแรก)'); return; }
+    var aoa=[['รหัสประจำตัว','ชื่อ-สกุล','เกรด']];
+    var demoG=[4,3.5,3,2.5,2,1.5,1,0];
+    var rows = state.students.length
+      ? state.students.map(function(st){ return [st.id||'', st.name||'', '']; })
+      : [['67301050001','นางสาวจันทร์จิรา พิลาดี',3.5],['67301050002','นายเดชาวัต ทองมี',2],['67301050003','นายธีรภัทร แก้วมณี',4]];
+    rows.forEach(function(r,i){ if(state.students.length) r[2]=demoG[i%demoG.length]; aoa.push(r); });
+    var wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=[{wch:16},{wch:26},{wch:8}];
+    XLSX.utils.book_append_sheet(wb,ws,'เกรด');
+    var out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([out],{type:'application/octet-stream'}));
+    a.download = state.students.length ? ('ตัวอย่างนำเข้าเกรด_'+baseName()+'.xlsx') : 'ตัวอย่างนำเข้าเกรด.xlsx';
+    a.click(); URL.revokeObjectURL(a.href);
+    flash('ดาวน์โหลดไฟล์ตัวอย่างเกรดแล้ว ✓');
+  });
 
   document.getElementById('btnReset').addEventListener('click',function(){
     if(!confirm('เริ่มใหม่ทั้งหมด? ข้อมูลปัจจุบันจะถูกลบ')) return;
