@@ -1368,7 +1368,10 @@
   }
   document.getElementById('btnPasteGrade').addEventListener('click',function(){
     if(!state.students.length){ alert('ยังไม่มีรายชื่อนักเรียน — นำเข้ารายชื่อก่อน แล้วจึงนำเข้าเกรด'); return; }
-    openGrade('', 'วางรายการ “รหัส/ชื่อ + เกรด” หรือกด “เลือกไฟล์ Excel…” แล้วเลือกแบบ 15 หรือ 18 สัปดาห์');
+    var eg=state.students.map(function(st){
+      return [st.id||'', st.name||'', '4'].filter(function(x){ return x!==''; }).join('\t');
+    }).join('\n');
+    openGrade(eg, 'ตัวอย่าง: ใส่เกรด 4 ให้ทุกคนไว้แล้ว — แก้เกรดในช่องขวาของแต่ละบรรทัด หรือวางทับ/เลือกไฟล์ Excel แล้วเลือกแบบ 15 หรือ 18 สัปดาห์');
   });
   document.getElementById('gradeText').addEventListener('paste',function(){
     var ta=this;
